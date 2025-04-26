@@ -1,13 +1,12 @@
-package com.example.billboardpro;
+package com.techbytedev.signboardmanager;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class BillboardProApplication {
+public class SignBoardManagerApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(BillboardProApplication.class, args);
+        SpringApplication.run(SignBoardManagerApplication.class, args);
     }
-
 }
