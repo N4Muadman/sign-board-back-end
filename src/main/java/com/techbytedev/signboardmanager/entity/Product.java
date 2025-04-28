@@ -9,10 +9,6 @@ import java.util.Date;
 
 @Entity
 @Table(name = "products")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,8 +31,14 @@ public class Product {
     @Column(name = "dimensions")
     private String dimensions;
 
-    @Column(name = "price", precision = 15, scale = 2)
+    @Column(name = "price", precision = 15, scale = 2, nullable = false)
     private BigDecimal price;
+
+    @Column(name = "discount_percent")
+    private BigDecimal discountPercent;
+
+    @Column(name = "discounted_price", nullable = false)
+    private BigDecimal discountedPrice;
 
     @Column(name = "sku", unique = true, length = 100)
     private String sku;
@@ -161,5 +163,21 @@ public class Product {
 
     public void setDeletedAt(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public BigDecimal getDiscountPercent() {
+        return discountPercent;
+    }
+
+    public void setDiscountPercent(BigDecimal discountPercent) {
+        this.discountPercent = discountPercent;
+    }
+
+    public BigDecimal getDiscountedPrice() {
+        return discountedPrice;
+    }
+
+    public void setDiscountedPrice(BigDecimal discountedPrice) {
+        this.discountedPrice = discountedPrice;
     }
 }

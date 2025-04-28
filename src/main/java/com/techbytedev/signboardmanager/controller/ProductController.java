@@ -1,5 +1,6 @@
 package com.techbytedev.signboardmanager.controller;
 
+import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.entity.Product;
 import com.techbytedev.signboardmanager.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,14 +46,36 @@ public class ProductController {
     //CUSTOMER
     // tìm kiếm sản phẩm theo tên khi người dùng nhập vào từ bất kỳ
     @GetMapping("/search")
-    public ResponseEntity<List<Product>> searchProducts(@RequestParam String name) {
-        List<Product> products = productService.searchProductsByName(name);
-        return ResponseEntity.ok(products);
+    public List<ProductResponse> searchProducts(@RequestParam String name) {
+        return productService.searchProductsByName(name);
     }
     // lấy danh sách sản phẩm theo danh mục con
-    @GetMapping("/{categoryId}")
-    public List<Product> getProductsByCategoryId(@PathVariable int categoryId) {
-        return productService.getProductsByCategoryId(categoryId);
+    @GetMapping("/category/{categoryId}")
+    public List<ProductResponse> getProductsByCategoryId(@PathVariable int categoryId) {
+        return productService.getProductsWithPrimaryImageByCategoryId(categoryId);
+    }
+    // hiển thị chi tiết sản phẩm
+    @GetMapping("/{id}")
+        public ProductResponse getProductDetails(@PathVariable int id) {
+            return productService.getProductDetailsById(id);
+    }
+    // lọc theo giá sau khi đã giảm
+    @GetMapping("/filter-by-price")
+    public List<Product> filterProductsByPrice(
+            @RequestParam double minPrice,
+            @RequestParam double maxPrice) {
+        return productService.filterProductsByDiscountedPrice(minPrice, maxPrice);
+    }
+    // lấy sản phẩm sắp xếp theo giá giảm dần
+    @GetMapping("/sorted/desc")
+    public List<Product> getProductsSortedByDiscountedPriceDesc() {
+        return productService.getProductsSortedByDiscountedPriceDesc();
+    }
+
+    //lấy sản phẩm sắp xếp theo giá tăng dần
+    @GetMapping("/sorted/asc")
+    public List<Product> getProductsSortedByDiscountedPriceAsc() {
+        return productService.getProductsSortedByDiscountedPriceAsc();
     }
 
 }
