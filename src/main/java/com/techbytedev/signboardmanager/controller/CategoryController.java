@@ -34,29 +34,7 @@ public class CategoryController {
         List<Category> categories = categoryService.getAllCategories();
         return new ResponseEntity<>(categories, HttpStatus.OK);
     }
-    // thêm danh mục
-    @PostMapping("/create")
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
-        Category saveCategory = categoryService.saveCategory(category);
-        return new ResponseEntity<>(saveCategory, HttpStatus.CREATED);
-    }
-    // sửa danh mục
-    @PutMapping("/edit/{id}")
-    public Category updateCategory(@PathVariable int id, @RequestBody Category category) {
-        return categoryService.updateCategory(id, category);
-    }
-    // xóa danh mục
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteCategory(@PathVariable int id) {
-        try {
-            categoryService.deleteCategory(id);
-            return ResponseEntity.ok("Xóa danh mục thành công");
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(400).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(404).body("Không tìm thấy danh mục");
-        }
-    }
+  
     // tìm kiếm danh mục
     @GetMapping("/search")
     public ResponseEntity<List<Category>> searchCategory(@RequestParam String name) {

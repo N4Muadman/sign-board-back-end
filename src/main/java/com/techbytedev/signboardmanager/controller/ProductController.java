@@ -22,27 +22,7 @@ public class ProductController {
     public ResponseEntity<List<Product>> getList() {
         return ResponseEntity.ok(productService.findAll());
     }
-    // thêm sản phẩm
-    @PostMapping("/create")
-    public ResponseEntity<Product> create(@RequestBody Product product) {
-        Product saveProduct = productService.saveProduct(product);
-        return new ResponseEntity<>(saveProduct, HttpStatus.CREATED);
-    }
-    // sửa sản phẩm
-    @PutMapping("/edit/{id}")
-    public Product edit(@PathVariable int id, @RequestBody Product product) {
-        return productService.updateProduct(id, product);
-    }
-    // xóa sản phẩm
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteProduct(@PathVariable int id) {
-        try {
-            productService.deleteProduct(id);
-            return ResponseEntity.ok("Xóa sản phẩm thành công");
-        } catch (Exception e) {
-            return ResponseEntity.status(404).body("Không tìm thấy sản phẩm");
-        }
-    }
+    
     //CUSTOMER
     // tìm kiếm sản phẩm theo tên khi người dùng nhập vào từ bất kỳ
     @GetMapping("/search")

@@ -28,10 +28,5 @@ public class ContactController {
     public List<ContactResponse> getReviewsByProductId(@PathVariable int productId){
         return contactService.getReviewsByProductId(productId);
     }
-    // thêm liên hệ
-    @PostMapping("/create")
-    public ResponseEntity<Contact> createContact(@RequestBody Contact contact){
-        Contact saveContact = contactService.saveContact(contact);
-        return new ResponseEntity<>(saveContact, HttpStatus.CREATED);
-    }
+    
 }

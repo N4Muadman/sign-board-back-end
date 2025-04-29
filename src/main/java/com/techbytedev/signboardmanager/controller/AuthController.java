@@ -1,6 +1,5 @@
 package com.techbytedev.signboardmanager.controller;
 
-
 import com.techbytedev.signboardmanager.dto.request.AuthRequest;
 import com.techbytedev.signboardmanager.dto.request.RegisterRequest;
 import com.techbytedev.signboardmanager.dto.request.ResetPasswordRequest;
@@ -8,6 +7,8 @@ import com.techbytedev.signboardmanager.dto.response.AuthResponse;
 import com.techbytedev.signboardmanager.service.AuthService;
 import jakarta.mail.MessagingException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,9 +21,15 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/register")
-    public AuthResponse register(@RequestBody RegisterRequest request) {
-        return authService.register(request);
+    @PostMapping("/register/send-code")
+    public ResponseEntity<String> sendVerificationCode(@RequestBody RegisterRequest request) throws MessagingException {
+        authService.sendVerificationCode(request);
+        return ResponseEntity.ok("Verification code sent to email");
+    }
+
+    @PostMapping("/register/verify")
+    public AuthResponse verifyAndRegister(@RequestParam String email, @RequestParam String code) {
+        return authService.verifyAndRegister(email, code);
     }
 
     @PostMapping("/login")
@@ -33,12 +40,31 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestParam String email) throws MessagingException {
         authService.forgotPassword(email);
-        return ResponseEntity.ok("Password reset email sent");
+        return ResponseEntity.ok("Verification code sent to email");
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
         return ResponseEntity.ok("Password reset successfully");
+    }
+
+    @GetMapping("/google-login")
+    public ResponseEntity<String> googleLogin() {
+        return ResponseEntity.ok("Redirecting to Google login...");
+    }
+
+    @GetMapping("/google-callback")
+    public ResponseEntity<AuthResponse> googleCallback(OAuth2AuthenticationToken authentication) {
+        OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
+        String email = oidcUser.getEmail();
+        String fullName = oidcUser.getFullName();
+        AuthResponse response = authService.googleLogin(email, fullName);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout() {
+        return ResponseEntity.ok("Logged out successfully");
     }
 }
