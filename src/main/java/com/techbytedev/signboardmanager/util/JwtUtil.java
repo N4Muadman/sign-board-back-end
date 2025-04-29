@@ -1,5 +1,5 @@
-
 package com.techbytedev.signboardmanager.util;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -25,10 +25,18 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
+    // Tạo token cho UserDetails (đăng nhập thông thường)
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", userDetails.getAuthorities().iterator().next().getAuthority());
         return createToken(claims, userDetails.getUsername());
+    }
+
+    // Tạo token cho người dùng từ Google OAuth2
+    public String generateTokenForOAuth2User(String email, String role) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
+        return createToken(claims, email);
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
@@ -44,6 +52,11 @@ public class JwtUtil {
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    public Boolean validateTokenForOAuth2User(String token, String email) {
+        final String extractedEmail = extractUsername(token);
+        return (extractedEmail.equals(email) && !isTokenExpired(token));
     }
 
     public String extractUsername(String token) {
