@@ -11,10 +11,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/contact")
+@RequestMapping("/api/contacts")
 public class ContactController {
-    @Autowired
-    private ContactService contactService;
+    private final ContactService contactService;
+
+    public ContactController(ContactService contactService) {
+        this.contactService = contactService;
+    }
 
     //ADMIN
     // danh sách liên hệ

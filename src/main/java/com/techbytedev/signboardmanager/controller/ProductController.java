@@ -1,20 +1,24 @@
 package com.techbytedev.signboardmanager.controller;
 
+import com.techbytedev.signboardmanager.dto.request.ProductRequest;
 import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.entity.Product;
 import com.techbytedev.signboardmanager.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/product")
+@RequestMapping("/api/products")
 public class ProductController {
-    @Autowired
-    private ProductService productService;
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
 
     //ADMIN
     // lấy danh sách sản phẩm
@@ -24,14 +28,21 @@ public class ProductController {
     }
     // thêm sản phẩm
     @PostMapping("/create")
-    public ResponseEntity<Product> create(@RequestBody Product product) {
-        Product saveProduct = productService.saveProduct(product);
-        return new ResponseEntity<>(saveProduct, HttpStatus.CREATED);
+    public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest productRequest) {
+        ProductResponse productResponse = productService.createProduct(productRequest);
+        return ResponseEntity.ok(productResponse);
     }
     // sửa sản phẩm
     @PutMapping("/edit/{id}")
-    public Product edit(@PathVariable int id, @RequestBody Product product) {
-        return productService.updateProduct(id, product);
+    public ResponseEntity<ProductResponse> updateProduct(
+            @PathVariable("id") int productId,
+            @RequestBody ProductRequest productRequest) {
+        try {
+            ProductResponse response = productService.updateProduct(productId, productRequest);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
     // xóa sản phẩm
     @DeleteMapping("/delete/{id}")
@@ -44,38 +55,21 @@ public class ProductController {
         }
     }
     //CUSTOMER
-    // tìm kiếm sản phẩm theo tên khi người dùng nhập vào từ bất kỳ
-    @GetMapping("/search")
-    public List<ProductResponse> searchProducts(@RequestParam String name) {
-        return productService.searchProductsByName(name);
-    }
-    // lấy danh sách sản phẩm theo danh mục con
-    @GetMapping("/category/{categoryId}")
-    public List<ProductResponse> getProductsByCategoryId(@PathVariable int categoryId) {
-        return productService.getProductsWithPrimaryImageByCategoryId(categoryId);
-    }
     // hiển thị chi tiết sản phẩm
     @GetMapping("/{id}")
         public ProductResponse getProductDetails(@PathVariable int id) {
             return productService.getProductDetailsById(id);
     }
-    // lọc theo giá sau khi đã giảm
-    @GetMapping("/filter-by-price")
-    public List<Product> filterProductsByPrice(
-            @RequestParam double minPrice,
-            @RequestParam double maxPrice) {
-        return productService.filterProductsByDiscountedPrice(minPrice, maxPrice);
-    }
-    // lấy sản phẩm sắp xếp theo giá giảm dần
-    @GetMapping("/sorted/desc")
-    public List<Product> getProductsSortedByDiscountedPriceDesc() {
-        return productService.getProductsSortedByDiscountedPriceDesc();
-    }
-
-    //lấy sản phẩm sắp xếp theo giá tăng dần
-    @GetMapping("/sorted/asc")
-    public List<Product> getProductsSortedByDiscountedPriceAsc() {
-        return productService.getProductsSortedByDiscountedPriceAsc();
+    // lọc sản phẩm
+    @GetMapping("/filter")
+    public List<ProductResponse> filterProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false, defaultValue = "none") String sort
+    ) {
+        return productService.filterProducts(name, categoryId, minPrice, maxPrice, sort);
     }
 
 }
