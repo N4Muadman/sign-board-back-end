@@ -48,7 +48,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/api/category/**").permitAll()
                 .requestMatchers("/api/design/canva-api-key").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("admin")
+                .requestMatchers("/api/admin/**").hasRole("Admin")
                 .requestMatchers("/api/design/**").authenticated()
                 .anyRequest().authenticated()
             )
