@@ -7,6 +7,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -20,49 +22,51 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(CustomAuthenticationSuccessHandler.class);
+
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
 
-    @Value("${application.frontend.url:http://localhost:3000}")
+    @Value("${application.frontend.url:http://127.0.0.1:3000}")
     private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        // Kiểm tra authentication có null không
+        logger.debug("onAuthenticationSuccess called with request URI: {}", request.getRequestURI());
         if (authentication == null) {
-            System.err.println("Authentication is null in CustomAuthenticationSuccessHandler");
+            logger.error("Authentication is null in CustomAuthenticationSuccessHandler");
             response.sendRedirect(frontendUrl + "/login-error?message=Authentication+is+null");
             return;
         }
 
-        // Kiểm tra xem principal có phải là OidcUser không
         if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
+            logger.debug("OidcUser received: {}", oidcUser.getAttributes());
             String email = oidcUser.getEmail();
             if (email == null) {
-                System.err.println("Could not get email from OidcUser");
+                logger.error("Could not get email from OidcUser");
                 response.sendRedirect(frontendUrl + "/login-error?message=Could+not+get+email");
                 return;
             }
 
-            // Tìm user trong DB
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> {
-                        System.err.println("FATAL: User not found in DB after OIDC login despite CustomOidcUserService: " + email);
+                        logger.error("User not found in DB after OIDC login: {}", email);
                         return new RuntimeException("User not found in DB after OIDC login: " + email);
                     });
 
-            // Tạo JWT
             String jwt = jwtUtil.generateToken(user);
+            logger.debug("Generated JWT for user {}: {}", email, jwt);
 
-            // Tạo URL redirect về Frontend kèm token trong URL Fragment
+            String redirectPath = request.getRequestURI().contains("canva") ? "/design-start" : "/login-success";
             String redirectUrl = UriComponentsBuilder.fromUriString(frontendUrl)
-                    .path("/login-success")
-                    .fragment("token=" + jwt)
+                    .path(redirectPath)
+                    .queryParam("token", jwt)
                     .build().toUriString();
+            logger.debug("Redirecting to: {}", redirectUrl);
 
             response.sendRedirect(redirectUrl);
         } else {
-            System.err.println("Authentication principal is not an OidcUser: " + authentication.getPrincipal().getClass().getName());
+            logger.error("Authentication principal is not an OidcUser: {}", authentication.getPrincipal().getClass().getName());
             response.sendRedirect(frontendUrl + "/login-error?message=Authentication+principal+is+not+OidcUser");
         }
     }

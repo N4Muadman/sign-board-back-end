@@ -25,8 +25,8 @@ public class SecurityConfig {
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          ObjectProvider<CustomOidcUserService> customOidcUserServiceProvider,
-                          CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler) {
+                         ObjectProvider<CustomOidcUserService> customOidcUserServiceProvider,
+                         CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.customOidcUserServiceProvider = customOidcUserServiceProvider;
         this.customAuthenticationSuccessHandler = customAuthenticationSuccessHandler;
@@ -37,8 +37,8 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
-                config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                config.setAllowedOrigins(Arrays.asList("http://127.0.0.1:3000"));
+                config.setAllowedMethods(Arrays.asList("GET", "POST", "OPTIONS"));
                 config.setAllowedHeaders(Arrays.asList("*"));
                 config.setAllowCredentials(true);
                 return config;
@@ -46,22 +46,21 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/category/**").permitAll()
-                .requestMatchers("/api/design/canva-api-key").permitAll()
+                .requestMatchers("/api/auth/**", "/api/design/**", "/login/oauth2/code/**", "/oauth2/authorization/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("Admin")
-                .requestMatchers("/api/design/**").authenticated()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/api/auth/google-login")
-                .defaultSuccessUrl("/api/auth/google-callback", true)
+                .loginPage("/api/auth/login")
                 .successHandler(customAuthenticationSuccessHandler)
                 .userInfoEndpoint(userInfo -> userInfo
                     .oidcUserService(customOidcUserServiceProvider.getObject())
                 )
+                .redirectionEndpoint(redirection -> redirection
+                    .baseUri("/login/oauth2/code/*")
+                )
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 

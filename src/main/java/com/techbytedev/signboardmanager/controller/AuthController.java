@@ -7,8 +7,10 @@ import com.techbytedev.signboardmanager.dto.response.AuthResponse;
 import com.techbytedev.signboardmanager.service.AuthService;
 import jakarta.mail.MessagingException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -60,5 +62,18 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
         return ResponseEntity.ok("Logged out successfully");
+    }
+
+    @GetMapping("/callback")
+    public String handleOAuthCallback(@AuthenticationPrincipal OAuth2User principal) {
+        if (principal != null) {
+            // Lấy access token từ principal (phụ thuộc vào cách bạn cấu hình CustomOidcUserService)
+            String accessToken = principal.getAttribute("access_token");
+            if (accessToken != null) {
+                // Chuyển hướng về frontend với token hoặc thông báo
+                return "Đăng nhập thành công! Bạn sẽ được chuyển hướng. <script>window.location.href='http://127.0.0.1:3000/';</script>";
+            }
+        }
+        return "Đăng nhập thất bại!";
     }
 }
