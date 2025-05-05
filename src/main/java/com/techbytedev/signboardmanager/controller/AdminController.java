@@ -1,6 +1,8 @@
 package com.techbytedev.signboardmanager.controller;
 
+import com.techbytedev.signboardmanager.dto.request.ProductRequest;
 import com.techbytedev.signboardmanager.dto.request.UserUpdateRequest;
+import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.Category;
 import com.techbytedev.signboardmanager.entity.Contact;
@@ -28,22 +30,21 @@ public class AdminController {
 
     private final UserDesignRepository userDesignRepository;
     private final UserService userService;
-
+    private final ProductService productService;
     @Autowired
     private CategoryService categoryService;
 
     @Autowired
     private ContactService contactService;
 
-    @Autowired
-    private ProductService productService;
 
-    @Autowired
-    private SiteSettingService siteSettingService;
+    private final SiteSettingService siteSettingService;
 
-    public AdminController(UserDesignRepository userDesignRepository, UserService userService) {
+    public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService, SiteSettingService siteSettingService) {
         this.userDesignRepository = userDesignRepository;
         this.userService = userService;
+        this.productService = productService;
+        this.siteSettingService = siteSettingService;
     }
 
     // --- API quản lý thiết kế (UserDesign) ---
@@ -177,17 +178,25 @@ public class AdminController {
 
     // --- API quản lý sản phẩm (Product) ---
 
+   // thêm sản phẩm
     @PostMapping("/product/create")
-    public ResponseEntity<Product> create(@RequestBody Product product) {
-        Product saveProduct = productService.saveProduct(product);
-        return new ResponseEntity<>(saveProduct, HttpStatus.CREATED);
+    public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest productRequest) {
+        ProductResponse productResponse = productService.createProduct(productRequest);
+        return ResponseEntity.ok(productResponse);
     }
-
+    // sửa sản phẩm
     @PutMapping("/product/edit/{id}")
-    public Product edit(@PathVariable int id, @RequestBody Product product) {
-        return productService.updateProduct(id, product);
+    public ResponseEntity<ProductResponse> updateProduct(
+            @PathVariable("id") int productId,
+            @RequestBody ProductRequest productRequest) {
+        try {
+            ProductResponse response = productService.updateProduct(productId, productRequest);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
-
+    // xóa sản phẩm
     @DeleteMapping("/product/delete/{id}")
     public ResponseEntity<String> deleteProduct(@PathVariable int id) {
         try {
@@ -197,11 +206,12 @@ public class AdminController {
             return ResponseEntity.status(404).body("Không tìm thấy sản phẩm");
         }
     }
-
     // --- API quản lý cài đặt site (SiteSetting) ---
 
+    //ADMIN
+    // sửa nội dung
     @PutMapping("/site-setting/edit/{key}")
-    public SiteSetting updateSiteSetting(@PathVariable("key") String key, @RequestBody SiteSetting siteSetting) {
+    public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting){
         return siteSettingService.updateSiteSetting(key, siteSetting);
     }
 }

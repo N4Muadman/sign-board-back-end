@@ -11,8 +11,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/site-setting")
 public class SiteSettingController {
-    @Autowired
-    private SiteSettingService siteSettingService;
+
+    private final SiteSettingService siteSettingService;
+
+    public SiteSettingController(SiteSettingService siteSettingService) {
+        this.siteSettingService = siteSettingService;
+    }
 
     //ADMIN & CUSTOMER
     // hiển thị
@@ -23,7 +27,7 @@ public class SiteSettingController {
     //ADMIN
     // sửa nội dung
     @PutMapping("/edit/{key}")
-    public SiteSetting updateSiteSetting(@PathVariable("key") String key, @RequestBody SiteSetting siteSetting){
+    public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting){
         return siteSettingService.updateSiteSetting(key, siteSetting);
     }
 }

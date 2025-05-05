@@ -3,7 +3,6 @@ package com.techbytedev.signboardmanager.service;
 import com.techbytedev.signboardmanager.dto.response.ContactResponse;
 import com.techbytedev.signboardmanager.entity.Contact;
 import com.techbytedev.signboardmanager.repository.ContactRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,8 +10,12 @@ import java.util.List;
 
 @Service
 public class ContactService {
-    @Autowired
-    private ContactRepository contactRepository;
+
+    private final ContactRepository contactRepository;
+
+    public ContactService(ContactRepository contactRepository) {
+        this.contactRepository = contactRepository;
+    }
 
     public List<Contact> getAllContacts() {
         return contactRepository.findAll();
