@@ -21,15 +21,9 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/register/send-code")
-    public ResponseEntity<String> sendVerificationCode(@RequestBody RegisterRequest request) throws MessagingException {
-        authService.sendVerificationCode(request);
-        return ResponseEntity.ok("Verification code sent to email");
-    }
-
-    @PostMapping("/register/verify")
-    public AuthResponse verifyAndRegister(@RequestParam String email, @RequestParam String code) {
-        return authService.verifyAndRegister(email, code);
+    @PostMapping("/register")
+    public AuthResponse register(@RequestBody RegisterRequest request) {
+        return authService.register(request);
     }
 
     @PostMapping("/login")

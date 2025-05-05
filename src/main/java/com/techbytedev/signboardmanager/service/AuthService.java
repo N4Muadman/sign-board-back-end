@@ -19,7 +19,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // Import annotation
 
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -50,8 +49,7 @@ public class AuthService {
         this.userService = userService;
     }
 
-    @Transactional // Thêm annotation để đảm bảo giao dịch
-    public void sendVerificationCode(RegisterRequest request) throws MessagingException {
+    public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -59,50 +57,20 @@ public class AuthService {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        String verificationCode = generateVerificationCode();
-
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName());
+
         Role role = roleRepository.findByName("customer")
                 .orElseThrow(() -> new IllegalArgumentException("Customer role not found"));
+
         user.setRole(role);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-        user.setActive(false);
+        user.setActive(true); // Kích hoạt ngay lập tức
         userRepository.save(user);
-
-        tokenRepository.deleteByUserId(user.getId());
-        LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
-        PasswordResetToken verificationToken = new PasswordResetToken(verificationCode, user, expiryDate);
-        tokenRepository.save(verificationToken);
-
-        emailService.sendVerificationCodeEmail(user.getEmail(), verificationCode);
-    }
-
-    @Transactional // Thêm annotation để đảm bảo giao dịch
-    public AuthResponse verifyAndRegister(String email, String verificationCode) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        PasswordResetToken token = tokenRepository.findByToken(verificationCode)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid verification code"));
-
-        if (token.isExpired()) {
-            throw new IllegalArgumentException("Verification code has expired");
-        }
-
-        if (!token.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("Verification code does not match user");
-        }
-
-        user.setActive(true);
-        user.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(user);
-
-        tokenRepository.delete(token);
 
         String jwt = jwtUtil.generateToken(user);
         AuthResponse response = new AuthResponse(jwt);
@@ -110,7 +78,6 @@ public class AuthService {
         return response;
     }
 
-    @Transactional // Thêm annotation để đảm bảo giao dịch
     public AuthResponse login(AuthRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + request.getUsername()));
@@ -134,22 +101,23 @@ public class AuthService {
         return response;
     }
 
-    @Transactional // Thêm annotation để đảm bảo giao dịch
     public void forgotPassword(String email) throws MessagingException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Email not found"));
 
+        // Tạo mã xác thực 6 chữ số
         String verificationCode = generateVerificationCode();
 
+        // Lưu mã xác thực
         tokenRepository.deleteByUserId(user.getId());
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
         PasswordResetToken resetToken = new PasswordResetToken(verificationCode, user, expiryDate);
         tokenRepository.save(resetToken);
 
+        // Gửi email
         emailService.sendVerificationCodeEmail(user.getEmail(), verificationCode);
     }
 
-    @Transactional // Thêm annotation để đảm bảo giao dịch
     public void resetPassword(ResetPasswordRequest request) {
         PasswordResetToken resetToken = tokenRepository.findByToken(request.getToken())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid verification code"));
@@ -166,7 +134,6 @@ public class AuthService {
         tokenRepository.delete(resetToken);
     }
 
-    @Transactional // Thêm annotation để đảm bảo giao dịch
     public AuthResponse googleLogin(String email, String fullName) {
         UserResponse userResponse = userService.processGoogleUser(email, fullName);
         User user = userRepository.findByEmail(email)
@@ -177,9 +144,10 @@ public class AuthService {
         return response;
     }
 
+    // Tạo mã xác thực 6 chữ số
     private String generateVerificationCode() {
         Random random = new Random();
-        int code = 100000 + random.nextInt(900000);
+        int code = 100000 + random.nextInt(900000); // Tạo số ngẫu nhiên từ 100000 đến 999999
         return String.valueOf(code);
     }
 }
