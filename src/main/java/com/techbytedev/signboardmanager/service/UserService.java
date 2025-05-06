@@ -67,6 +67,9 @@ public class UserService {
         }
 
         user.setUpdatedAt(LocalDateTime.now());
+        user.setRole(request.getRoleName().equals("Admin") ? roleRepository.findByName("Admin")
+                .orElseThrow(() -> new IllegalArgumentException("Admin role not found")) : roleRepository.findByName("Customer")
+                .orElseThrow(() -> new IllegalArgumentException("Customer role not found")));
         userRepository.save(user);
 
         return convertToResponse(user);
