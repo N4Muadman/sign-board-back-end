@@ -7,10 +7,6 @@ import com.techbytedev.signboardmanager.dto.response.AuthResponse;
 import com.techbytedev.signboardmanager.service.AuthService;
 import jakarta.mail.MessagingException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -45,17 +41,8 @@ public class AuthController {
         return ResponseEntity.ok("Password reset successfully");
     }
 
-    @GetMapping("/google-login")
-    public ResponseEntity<String> googleLogin() {
-        return ResponseEntity.ok("Redirecting to Google login...");
-    }
-
-   
-
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
         return ResponseEntity.ok("Logged out successfully");
     }
-
-   
 }

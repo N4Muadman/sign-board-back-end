@@ -1,7 +1,9 @@
 package com.techbytedev.signboardmanager.controller;
 
 import com.techbytedev.signboardmanager.dto.request.ProductRequest;
+import com.techbytedev.signboardmanager.dto.request.UserCreateRequest;
 import com.techbytedev.signboardmanager.dto.request.UserUpdateRequest;
+import com.techbytedev.signboardmanager.dto.response.CustomPageResponse; // Thêm import
 import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.Category;
@@ -47,8 +49,6 @@ public class AdminController {
         this.productService = productService;
         this.siteSettingService = siteSettingService;
     }
-
-    // --- API quản lý thiết kế (UserDesign) ---
 
     @GetMapping("/designs")
     public List<UserDesign> getSubmittedDesigns() {
@@ -99,17 +99,33 @@ public class AdminController {
         return ResponseEntity.ok(design);
     }
 
-    // --- API quản lý người dùng (User) ---
-
     @GetMapping("/users")
-    public Page<UserResponse> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
+    public CustomPageResponse<UserResponse> getAllUsers(
+            @RequestParam(defaultValue = "1") int page, // Mặc định page = 1
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort) {
+        // Trừ 1 để khớp với Spring Data JPA (bắt đầu từ 0)
+        int adjustedPage = page - 1;
+        if (adjustedPage < 0) {
+            adjustedPage = 0;
+        }
         String[] sortParams = sort.split(",");
         Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
-        return userService.getAllUsers(pageable);
+        Pageable pageable = PageRequest.of(adjustedPage, size, Sort.by(direction, sortParams[0]));
+        Page<UserResponse> userPage = userService.getAllUsers(pageable);
+
+        // Trả về CustomPageResponse với pageNumber bắt đầu từ 1
+        return new CustomPageResponse<>(
+                userPage.getContent(),
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages(),
+                userPage.isFirst(),
+                userPage.isLast(),
+                userPage.getNumberOfElements(),
+                userPage.isEmpty()
+        );
     }
 
     @GetMapping("/users/{id}")
@@ -117,20 +133,40 @@ public class AdminController {
         return userService.getUserById(id);
     }
 
-    // API lọc và tìm kiếm người dùng với phân trang
+    @PostMapping("/users/create")
+    public UserResponse createUser(@RequestBody UserCreateRequest request) {
+        return userService.createUser(request);
+    }
+
     @GetMapping("/users/search")
-    public Page<UserResponse> searchUsers(
+    public CustomPageResponse<UserResponse> searchUsers(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String roleName,
             @RequestParam(required = false) Boolean isActive,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page, // Mặc định page = 1
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort) {
+        int adjustedPage = page - 1;
+        if (adjustedPage < 0) {
+            adjustedPage = 0;
+        }
         String[] sortParams = sort.split(",");
         Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
-        return userService.searchUsers(username, email, roleName, isActive, pageable);
+        Pageable pageable = PageRequest.of(adjustedPage, size, Sort.by(direction, sortParams[0]));
+        Page<UserResponse> userPage = userService.searchUsers(username, email, roleName, isActive, pageable);
+
+        return new CustomPageResponse<>(
+                userPage.getContent(),
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages(),
+                userPage.isFirst(),
+                userPage.isLast(),
+                userPage.getNumberOfElements(),
+                userPage.isEmpty()
+        );
     }
 
     @PutMapping("/users/{id}")
@@ -156,8 +192,6 @@ public class AdminController {
         return ResponseEntity.ok(updatedUser);
     }
 
-    // --- API quản lý danh mục (Category) ---
-
     @PostMapping("/category/create")
     public ResponseEntity<Category> createCategory(@RequestBody Category category) {
         Category saveCategory = categoryService.saveCategory(category);
@@ -181,15 +215,11 @@ public class AdminController {
         }
     }
 
-    // --- API quản lý liên hệ (Contact) ---
-
     @PostMapping("/contact/create")
     public ResponseEntity<Contact> createContact(@RequestBody Contact contact) {
         Contact saveContact = contactService.saveContact(contact);
         return new ResponseEntity<>(saveContact, HttpStatus.CREATED);
     }
-
-    // --- API quản lý sản phẩm (Product) ---
 
     @PostMapping("/product/create")
     public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest productRequest) {
@@ -218,8 +248,6 @@ public class AdminController {
             return ResponseEntity.status(404).body("Không tìm thấy sản phẩm");
         }
     }
-
-    // --- API quản lý cài đặt site (SiteSetting) ---
 
     @PutMapping("/site-setting/edit/{key}")
     public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting) {

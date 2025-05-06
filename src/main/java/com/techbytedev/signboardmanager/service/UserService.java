@@ -1,6 +1,9 @@
 package com.techbytedev.signboardmanager.service;
 
+import com.techbytedev.signboardmanager.dto.request.RegisterRequest;
+import com.techbytedev.signboardmanager.dto.request.UserCreateRequest;
 import com.techbytedev.signboardmanager.dto.request.UserUpdateRequest;
+import com.techbytedev.signboardmanager.dto.response.AuthResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.Role;
 import com.techbytedev.signboardmanager.entity.User;
@@ -156,6 +159,34 @@ public class UserService {
         }
 
         return user;
+    }
+    public UserResponse createUser(UserCreateRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setFullName(request.getFullName());
+        user.setAddress(request.getAddress());
+        user.setPhoneNumber(request.getPhoneNumber());
+       
+        user.setRole(request.getRoleName().equals("admin") ? roleRepository.findByName("Admin")
+                .orElseThrow(() -> new IllegalArgumentException("Admin role not found")) : roleRepository.findByName("Customer")
+                .orElseThrow(() -> new IllegalArgumentException("Customer role not found")));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setActive(true); // Kích hoạt ngay lập tức
+        userRepository.save(user);
+        UserResponse response = convertToResponse(user);
+
+        
+        return response;
     }
 
     // Lọc và tìm kiếm người dùng với phân trang

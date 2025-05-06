@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techbytedev.signboardmanager.dto.response.AuthResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.User;
-import com.techbytedev.signboardmanager.repository.UserRepository;
 import com.techbytedev.signboardmanager.util.JwtUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +25,6 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private static final Logger logger = LoggerFactory.getLogger(CustomAuthenticationSuccessHandler.class);
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
 
     @Value("${application.frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -41,17 +38,21 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             return;
         }
 
-        if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
-            logger.debug("OidcUser received: {}", oidcUser.getAttributes());
-            String email = oidcUser.getEmail();
+        if (authentication.getPrincipal() instanceof CustomOidcUser customOidcUser) {
+            logger.debug("CustomOidcUser received: {}", customOidcUser.getAttributes());
+            String email = customOidcUser.getEmail();
             if (email == null) {
-                logger.error("Could not get email from OidcUser");
+                logger.error("Could not get email from CustomOidcUser");
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Could not get email");
                 return;
             }
 
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("User not found in DB after OIDC login: " + email));
+            User user = customOidcUser.getUser();
+            if (user == null) {
+                logger.error("User object is null in CustomOidcUser for email: {}", email);
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "User object is null");
+                return;
+            }
 
             String jwt = jwtUtil.generateToken(user);
             logger.debug("Generated JWT for user {}: {}", email, jwt);
@@ -77,8 +78,8 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             response.getWriter().write(new ObjectMapper().writeValueAsString(authResponse));
             response.setStatus(HttpServletResponse.SC_OK);
         } else {
-            logger.error("Authentication principal is not an OidcUser: {}", authentication.getPrincipal().getClass().getName());
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication principal is not OidcUser");
+            logger.error("Authentication principal is not a CustomOidcUser: {}", authentication.getPrincipal().getClass().getName());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication principal is not CustomOidcUser");
         }
     }
 }

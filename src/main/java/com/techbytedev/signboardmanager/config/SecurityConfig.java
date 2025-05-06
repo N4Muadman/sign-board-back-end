@@ -16,8 +16,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import javax.servlet.http.HttpServletResponse;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,7 +45,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/login/oauth2/code/**", "/oauth2/authorization/**").permitAll()
+                .requestMatchers("/api/auth/**", "/login/oauth2/**").permitAll() // Cho phép tất cả các endpoint liên quan đến OAuth2
                 .requestMatchers("/api/design/**").permitAll()
                 .requestMatchers("/**.hot-update.json", "/**.hot-update.js").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("Admin")
@@ -53,17 +53,20 @@ public class SecurityConfig {
             )
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint((request, response, authException) -> {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: " + authException.getMessage());
                 })
             )
             .oauth2Login(oauth2 -> oauth2
                 .redirectionEndpoint(redirection -> redirection
-                    .baseUri("/api/auth/google-callback")
+                    .baseUri("/login/oauth2/code/*")
                 )
                 .userInfoEndpoint(userInfo -> userInfo
                     .oidcUserService(customOidcUserServiceProvider.getObject())
                 )
                 .successHandler(customAuthenticationSuccessHandler)
+                .failureHandler((request, response, exception) -> {
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "OAuth2 Login Failed: " + exception.getMessage());
+                })
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
