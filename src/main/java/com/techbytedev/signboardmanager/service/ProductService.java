@@ -5,6 +5,10 @@ import com.techbytedev.signboardmanager.dto.response.MaterialResponse;
 import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.entity.*;
 import com.techbytedev.signboardmanager.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +36,8 @@ public class ProductService {
     }
 
     // lấy danh sách sản phẩm
-    public List<Product> findAll() {
-        return productRepository.findAll();
+    public Page<Product> findAll(Pageable pageable) {
+        return productRepository.findAll(pageable);
     }
 
     // thêm sản phẩm
@@ -165,6 +169,11 @@ public class ProductService {
     // xóa sản phẩm
     public void deleteProduct (int productId) {
         productRepository.deleteById(productId);
+    }
+    // hiển thị sản phẩm theo danh mục con
+    public Page<Product> getProductsByCategoryId(int categoryId, int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size); // page bắt đầu từ 0
+        return productRepository.findByCategory_Id((long) categoryId, pageable);
     }
     // hiển thị sản phẩm chi tiết theo id sản phẩm
     public ProductResponse getProductDetailsById(int productId) {

@@ -1,20 +1,29 @@
 package com.techbytedev.signboardmanager.controller;
 
 import com.techbytedev.signboardmanager.entity.Category;
+import com.techbytedev.signboardmanager.entity.Product;
 import com.techbytedev.signboardmanager.service.CategoryService;
+import com.techbytedev.signboardmanager.service.ProductService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
     private final CategoryService categoryService;
+    private final ProductService productService;
 
-    public CategoryController(CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService, ProductService productService) {
         this.categoryService = categoryService;
+        this.productService = productService;
     }
 
     //CUSTOMER
@@ -31,10 +40,22 @@ public class CategoryController {
     }
     //ADMIN
     // lấy danh sách danh mục
-    @GetMapping("list")
-    public ResponseEntity<List<Category>> getAllCategories() {
-        List<Category> categories = categoryService.getAllCategories();
-        return new ResponseEntity<>(categories, HttpStatus.OK);
+    @GetMapping("/list")
+    public ResponseEntity<Map<String, Object>> getAllCategories(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "9") int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Category> categoryPage = categoryService.getAllCategories(pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", categoryPage.getContent());
+        response.put("pageNumber", categoryPage.getNumber() + 1);
+        response.put("pageSize", categoryPage.getSize());
+        response.put("totalPages", categoryPage.getTotalPages());
+        response.put("totalElements", categoryPage.getTotalElements());
+        response.put("last", categoryPage.isLast());
+
+        return ResponseEntity.ok(response);
     }
   
     // tìm kiếm danh mục

@@ -3,6 +3,8 @@ package com.techbytedev.signboardmanager.service;
 import com.techbytedev.signboardmanager.dto.response.ContactResponse;
 import com.techbytedev.signboardmanager.entity.Contact;
 import com.techbytedev.signboardmanager.repository.ContactRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,8 +19,8 @@ public class ContactService {
         this.contactRepository = contactRepository;
     }
 
-    public List<Contact> getAllContacts() {
-        return contactRepository.findAll();
+    public Page<Contact> getAllContacts(Pageable pageable) {
+        return contactRepository.findAll(pageable);
     }
 
     public Contact saveContact(Contact contact) {

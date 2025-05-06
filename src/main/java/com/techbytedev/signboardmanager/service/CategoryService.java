@@ -3,6 +3,8 @@ package com.techbytedev.signboardmanager.service;
 import com.techbytedev.signboardmanager.entity.Category;
 import com.techbytedev.signboardmanager.repository.CategoryRepository;
 import com.techbytedev.signboardmanager.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +30,8 @@ public class CategoryService {
 
     // lấy danh sách danh mục
     @Transactional
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public Page<Category> getAllCategories(Pageable pageable) {
+        return categoryRepository.findAll(pageable);
     }
 
     // Lấy danh mục cha

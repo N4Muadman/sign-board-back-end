@@ -4,6 +4,8 @@ import com.techbytedev.signboardmanager.dto.request.ArticleRequest;
 import com.techbytedev.signboardmanager.entity.Article;
 import com.techbytedev.signboardmanager.entity.PostType;
 import com.techbytedev.signboardmanager.repository.ArticleRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,8 +24,8 @@ public class ArticleService {
         this.articleRepository = articleRepository;
     }
 
-    public List<Article> getAllArticles() {
-        return articleRepository.findAll();
+    public Page<Article> getAllArticles(Pageable pageable) {
+        return articleRepository.findAll(pageable);
     }
 
     public Article createArticleFromDTO(ArticleRequest dto) {
