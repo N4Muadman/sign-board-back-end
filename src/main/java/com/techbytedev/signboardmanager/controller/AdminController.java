@@ -6,7 +6,6 @@ import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.Category;
 import com.techbytedev.signboardmanager.entity.Contact;
-import com.techbytedev.signboardmanager.entity.Product;
 import com.techbytedev.signboardmanager.entity.SiteSetting;
 import com.techbytedev.signboardmanager.entity.UserDesign;
 import com.techbytedev.signboardmanager.repository.UserDesignRepository;
@@ -15,8 +14,11 @@ import com.techbytedev.signboardmanager.service.ContactService;
 import com.techbytedev.signboardmanager.service.ProductService;
 import com.techbytedev.signboardmanager.service.SiteSettingService;
 import com.techbytedev.signboardmanager.service.UserService;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +39,6 @@ public class AdminController {
     @Autowired
     private ContactService contactService;
 
-
     private final SiteSettingService siteSettingService;
 
     public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService, SiteSettingService siteSettingService) {
@@ -52,8 +53,8 @@ public class AdminController {
     @GetMapping("/designs")
     public List<UserDesign> getSubmittedDesigns() {
         return userDesignRepository.findAll().stream()
-            .filter(design -> design.getStatus() == UserDesign.Status.SUBMITTED)
-            .toList();
+                .filter(design -> design.getStatus() == UserDesign.Status.SUBMITTED)
+                .toList();
     }
 
     @GetMapping("/designs/all")
@@ -64,7 +65,7 @@ public class AdminController {
     @GetMapping("/designs/{id}")
     public ResponseEntity<UserDesign> getDesignById(@PathVariable Integer id) {
         UserDesign design = userDesignRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
         return ResponseEntity.ok(design);
     }
 
@@ -73,7 +74,7 @@ public class AdminController {
             @PathVariable Integer id,
             @RequestBody UpdateDesignStatusRequest request) {
         UserDesign design = userDesignRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
 
         design.setStatus(request.status());
         if (request.notes() != null) {
@@ -90,7 +91,7 @@ public class AdminController {
             @PathVariable Integer id,
             @RequestBody FeedbackRequest request) {
         UserDesign design = userDesignRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
 
         design.setUserFeedback(request.feedback());
         design.setUpdatedAt(LocalDateTime.now());
@@ -101,8 +102,14 @@ public class AdminController {
     // --- API quản lý người dùng (User) ---
 
     @GetMapping("/users")
-    public List<UserResponse> getAllUsers() {
-        return userService.getAllUsers();
+    public Page<UserResponse> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort) {
+        String[] sortParams = sort.split(",");
+        Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
+        return userService.getAllUsers(pageable);
     }
 
     @GetMapping("/users/{id}")
@@ -110,14 +117,20 @@ public class AdminController {
         return userService.getUserById(id);
     }
 
-    // API mới: Lọc và tìm kiếm người dùng
+    // API lọc và tìm kiếm người dùng với phân trang
     @GetMapping("/users/search")
-    public List<UserResponse> searchUsers(
+    public Page<UserResponse> searchUsers(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String roleName,
-            @RequestParam(required = false) Boolean isActive) {
-        return userService.searchUsers(username, email, roleName, isActive);
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort) {
+        String[] sortParams = sort.split(",");
+        Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
+        return userService.searchUsers(username, email, roleName, isActive, pageable);
     }
 
     @PutMapping("/users/{id}")
@@ -178,13 +191,12 @@ public class AdminController {
 
     // --- API quản lý sản phẩm (Product) ---
 
-   // thêm sản phẩm
     @PostMapping("/product/create")
     public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest productRequest) {
         ProductResponse productResponse = productService.createProduct(productRequest);
         return ResponseEntity.ok(productResponse);
     }
-    // sửa sản phẩm
+
     @PutMapping("/product/edit/{id}")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable("id") int productId,
@@ -196,7 +208,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
-    // xóa sản phẩm
+
     @DeleteMapping("/product/delete/{id}")
     public ResponseEntity<String> deleteProduct(@PathVariable int id) {
         try {
@@ -206,12 +218,11 @@ public class AdminController {
             return ResponseEntity.status(404).body("Không tìm thấy sản phẩm");
         }
     }
+
     // --- API quản lý cài đặt site (SiteSetting) ---
 
-    //ADMIN
-    // sửa nội dung
     @PutMapping("/site-setting/edit/{key}")
-    public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting){
+    public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting) {
         return siteSettingService.updateSiteSetting(key, siteSetting);
     }
 }

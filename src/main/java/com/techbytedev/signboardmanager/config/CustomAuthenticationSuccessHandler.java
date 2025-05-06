@@ -1,5 +1,8 @@
 package com.techbytedev.signboardmanager.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techbytedev.signboardmanager.dto.response.AuthResponse;
+import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.User;
 import com.techbytedev.signboardmanager.repository.UserRepository;
 import com.techbytedev.signboardmanager.util.JwtUtil;
@@ -14,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -27,7 +29,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
 
-    @Value("${application.frontend.url:http://127.0.0.1:3000}")
+    @Value("${application.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
     @Override
@@ -35,7 +37,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         logger.debug("onAuthenticationSuccess called with request URI: {}", request.getRequestURI());
         if (authentication == null) {
             logger.error("Authentication is null in CustomAuthenticationSuccessHandler");
-            response.sendRedirect(frontendUrl + "/login-error?message=Authentication+is+null");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication is null");
             return;
         }
 
@@ -44,30 +46,39 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             String email = oidcUser.getEmail();
             if (email == null) {
                 logger.error("Could not get email from OidcUser");
-                response.sendRedirect(frontendUrl + "/login-error?message=Could+not+get+email");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Could not get email");
                 return;
             }
 
             User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> {
-                        logger.error("User not found in DB after OIDC login: {}", email);
-                        return new RuntimeException("User not found in DB after OIDC login: " + email);
-                    });
+                    .orElseThrow(() -> new RuntimeException("User not found in DB after OIDC login: " + email));
 
             String jwt = jwtUtil.generateToken(user);
             logger.debug("Generated JWT for user {}: {}", email, jwt);
 
-            String redirectPath = request.getRequestURI().contains("canva") ? "/design-start" : "/login-success";
-            String redirectUrl = UriComponentsBuilder.fromUriString(frontendUrl)
-                    .path(redirectPath)
-                    .queryParam("token", jwt)
-                    .build().toUriString();
-            logger.debug("Redirecting to: {}", redirectUrl);
+            // Chuyển đổi User thành UserResponse
+            UserResponse userResponse = new UserResponse();
+            userResponse.setId(user.getId());
+            userResponse.setUsername(user.getUsername());
+            userResponse.setEmail(user.getEmail());
+            userResponse.setFullName(user.getFullName());
+            userResponse.setPhoneNumber(user.getPhoneNumber());
+            userResponse.setAddress(user.getAddress());
+            userResponse.setActive(user.isActive());
+            userResponse.setRoleName(user.getRole() != null ? user.getRole().getName() : null);
 
-            response.sendRedirect(redirectUrl);
+            // Tạo AuthResponse với token và userResponse
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setToken(jwt);
+            authResponse.setUser(userResponse);
+
+            // Trả về JSON
+            response.setContentType("application/json");
+            response.getWriter().write(new ObjectMapper().writeValueAsString(authResponse));
+            response.setStatus(HttpServletResponse.SC_OK);
         } else {
             logger.error("Authentication principal is not an OidcUser: {}", authentication.getPrincipal().getClass().getName());
-            response.sendRedirect(frontendUrl + "/login-error?message=Authentication+principal+is+not+OidcUser");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication principal is not OidcUser");
         }
     }
 }

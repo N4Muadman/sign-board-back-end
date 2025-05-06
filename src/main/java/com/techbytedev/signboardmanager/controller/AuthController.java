@@ -50,30 +50,12 @@ public class AuthController {
         return ResponseEntity.ok("Redirecting to Google login...");
     }
 
-    @GetMapping("/google-callback")
-    public ResponseEntity<AuthResponse> googleCallback(OAuth2AuthenticationToken authentication) {
-        OidcUser oidcUser = (OidcUser) authentication.getPrincipal();
-        String email = oidcUser.getEmail();
-        String fullName = oidcUser.getFullName();
-        AuthResponse response = authService.googleLogin(email, fullName);
-        return ResponseEntity.ok(response);
-    }
+   
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
         return ResponseEntity.ok("Logged out successfully");
     }
 
-    @GetMapping("/callback")
-    public String handleOAuthCallback(@AuthenticationPrincipal OAuth2User principal) {
-        if (principal != null) {
-            // Lấy access token từ principal (phụ thuộc vào cách bạn cấu hình CustomOidcUserService)
-            String accessToken = principal.getAttribute("access_token");
-            if (accessToken != null) {
-                // Chuyển hướng về frontend với token hoặc thông báo
-                return "Đăng nhập thành công! Bạn sẽ được chuyển hướng. <script>window.location.href='http://127.0.0.1:3000/';</script>";
-            }
-        }
-        return "Đăng nhập thất bại!";
-    }
+   
 }

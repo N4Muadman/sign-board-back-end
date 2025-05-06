@@ -24,10 +24,5 @@ public class SiteSettingController {
     public ResponseEntity<List<SiteSetting>> getList(){
         return ResponseEntity.ok(siteSettingService.getAllSiteSettings());
     }
-    //ADMIN
-    // sửa nội dung
-    @PutMapping("/edit/{key}")
-    public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting){
-        return siteSettingService.updateSiteSetting(key, siteSetting);
-    }
+    
 }
