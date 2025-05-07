@@ -38,30 +38,4 @@ public class CategoryController {
         List<Category> childCategories = categoryService.getChildCategories(parentId);
         return ResponseEntity.ok(childCategories);
     }
-    //ADMIN
-    // lấy danh sách danh mục
-    @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> getAllCategories(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Category> categoryPage = categoryService.getAllCategories(pageable);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", categoryPage.getContent());
-        response.put("pageNumber", categoryPage.getNumber() + 1);
-        response.put("pageSize", categoryPage.getSize());
-        response.put("totalPages", categoryPage.getTotalPages());
-        response.put("totalElements", categoryPage.getTotalElements());
-        response.put("last", categoryPage.isLast());
-
-        return ResponseEntity.ok(response);
-    }
-  
-    // tìm kiếm danh mục
-    @GetMapping("/search")
-    public ResponseEntity<List<Category>> searchCategory(@RequestParam String name) {
-        List<Category> categories = categoryService.searchCategory(name);
-        return new ResponseEntity<>(categories, HttpStatus.OK);
-    }
 }

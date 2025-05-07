@@ -1,12 +1,10 @@
 package com.techbytedev.signboardmanager.controller;
 
-import com.techbytedev.signboardmanager.dto.request.ArticleRequest;
 import com.techbytedev.signboardmanager.entity.Article;
 import com.techbytedev.signboardmanager.service.ArticleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 

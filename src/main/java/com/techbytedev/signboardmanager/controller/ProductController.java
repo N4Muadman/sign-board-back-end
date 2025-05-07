@@ -25,26 +25,6 @@ public class ProductController {
         this.productService = productService;
     }
 
-    //ADMIN
-    // lấy danh sách sản phẩm
-    @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> getList(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
-
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Product> productPage = productService.findAll(pageable);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", productPage.getContent());
-        response.put("pageNumber", productPage.getNumber() + 1);
-        response.put("pageSize", productPage.getSize());
-        response.put("totalPages", productPage.getTotalPages());
-        response.put("totalElements", productPage.getTotalElements());
-        response.put("last", productPage.isLast());
-
-        return ResponseEntity.ok(response);
-    }
     //CUSTOMER
     // hiển thị danh sách sản phẩm thuộc danh mục con
     @GetMapping("/by-category/{categoryId}")
