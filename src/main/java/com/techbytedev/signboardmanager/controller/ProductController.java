@@ -33,7 +33,7 @@ public class ProductController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "9") int size
     ) {
-        Page<Product> productPage = productService.getProductsByCategoryId(categoryId, page, size);
+        Page<ProductResponse> productPage = productService.getProductsByCategoryId(categoryId, page, size);
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", productPage.getContent());

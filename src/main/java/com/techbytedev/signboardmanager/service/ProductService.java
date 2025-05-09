@@ -171,9 +171,31 @@ public class ProductService {
         productRepository.deleteById(productId);
     }
     // hiển thị sản phẩm theo danh mục con
-    public Page<Product> getProductsByCategoryId(int categoryId, int page, int size) {
-        Pageable pageable = PageRequest.of(page - 1, size); // page bắt đầu từ 0
-        return productRepository.findByCategory_Id((long) categoryId, pageable);
+    public Page<ProductResponse> getProductsByCategoryId(int categoryId, int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Product> products = productRepository.findByCategory_Id((long) categoryId, pageable);
+
+        Page<ProductResponse> productResponses = products.map(product -> {
+            ProductResponse response = new ProductResponse();
+            response.setId(product.getId());
+            response.setName(product.getName());
+            response.setPrice(product.getPrice());
+            response.setDiscount(product.getDiscountPercent());
+            response.setDiscountPrice(product.getDiscountedPrice());
+
+            ProductImage primaryImage = product.getImages().stream()
+                    .filter(image -> image.isPrimary())
+                    .findFirst()
+                    .orElse(null);
+
+            if (primaryImage != null) {
+                response.setImageURL(primaryImage.getImageUrl());
+            }
+
+            return response;
+        });
+
+        return productResponses;
     }
     // hiển thị sản phẩm chi tiết theo id sản phẩm
     public ProductResponse getProductDetailsById(int productId) {
