@@ -66,7 +66,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             userResponse.setPhoneNumber(user.getPhoneNumber());
             userResponse.setAddress(user.getAddress());
             userResponse.setActive(user.isActive());
-            userResponse.setRoleName(user.getRole() != null ? user.getRole().getName() : null);
+            userResponse.setRoleName(user.getRoleName()); // Sử dụng roleName thay vì user.getRole().getName()
 
             // Tạo AuthResponse với token và userResponse
             AuthResponse authResponse = new AuthResponse();

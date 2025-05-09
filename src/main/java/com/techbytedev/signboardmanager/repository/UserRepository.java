@@ -13,7 +13,8 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
-    Optional<User> findByUsername(String username);
+    @Query("SELECT u FROM User u JOIN FETCH u.role WHERE u.username = :username AND u.deletedAt IS NULL")
+    Optional<User> findByUsername(@Param("username") String username);
     Optional<User> findByEmail(String email);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
@@ -36,4 +37,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             @Param("isActive") Boolean isActive,
             Pageable pageable
     );
+
+    // Truy vấn role_id của người dùng
+    @Query("SELECT u.role.id FROM User u WHERE u.id = :userId")
+    Integer findRoleIdByUserId(@Param("userId") Integer userId);
 }

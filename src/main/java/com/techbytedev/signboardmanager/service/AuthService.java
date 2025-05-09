@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -63,13 +64,13 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName());
 
-        Role role = roleRepository.findByName("customer")
+        Role role = roleRepository.findByName("Customer")
                 .orElseThrow(() -> new IllegalArgumentException("Customer role not found"));
 
         user.setRole(role);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-        user.setActive(true); // Kích hoạt ngay lập tức
+        user.setActive(true);
         userRepository.save(user);
 
         String jwt = jwtUtil.generateToken(user);
@@ -78,10 +79,8 @@ public class AuthService {
         return response;
     }
 
+    @Transactional(readOnly = true)
     public AuthResponse login(AuthRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + request.getUsername()));
-
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
@@ -90,14 +89,13 @@ public class AuthService {
             throw new IllegalStateException("Authentication failed for user: " + request.getUsername());
         }
 
-        User authenticatedUser = (User) authentication.getPrincipal();
-        if (authenticatedUser == null) {
-            throw new IllegalStateException("Authenticated user is null after successful authentication");
-        }
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-        String jwt = jwtUtil.generateToken(authenticatedUser);
+        String jwt = jwtUtil.generateToken(user);
         AuthResponse response = new AuthResponse(jwt);
-        response.setUser(userService.convertToResponse(authenticatedUser));
+        response.setUser(userService.convertToResponse(user));
         return response;
     }
 
@@ -105,16 +103,12 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Email not found"));
 
-        // Tạo mã xác thực 6 chữ số
         String verificationCode = generateVerificationCode();
-
-        // Lưu mã xác thực
         tokenRepository.deleteByUserId(user.getId());
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
         PasswordResetToken resetToken = new PasswordResetToken(verificationCode, user, expiryDate);
         tokenRepository.save(resetToken);
 
-        // Gửi email
         emailService.sendVerificationCodeEmail(user.getEmail(), verificationCode);
     }
 
@@ -144,12 +138,9 @@ public class AuthService {
         return response;
     }
 
-    // Tạo mã xác thực 6 chữ số
     private String generateVerificationCode() {
         Random random = new Random();
-        int code = 100000 + random.nextInt(900000); // Tạo số ngẫu nhiên từ 100000 đến 999999
+        int code = 100000 + random.nextInt(900000);
         return String.valueOf(code);
     }
-
-    
 }

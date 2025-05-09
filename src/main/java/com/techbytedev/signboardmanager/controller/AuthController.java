@@ -20,19 +20,19 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public AuthResponse register(@RequestBody RegisterRequest request) {
-        return authService.register(request);
+    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody AuthRequest request) {
-        return authService.login(request);
+    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestParam String email) throws MessagingException {
         authService.forgotPassword(email);
-        return ResponseEntity.ok("Verification code sent to email");
+        return ResponseEntity.ok("Verification code sent to your email");
     }
 
     @PostMapping("/reset-password")
@@ -41,8 +41,10 @@ public class AuthController {
         return ResponseEntity.ok("Password reset successfully");
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
-        return ResponseEntity.ok("Logged out successfully");
+    @PostMapping("/google-login")
+    public ResponseEntity<AuthResponse> googleLogin(
+            @RequestParam String email,
+            @RequestParam String fullName) {
+        return ResponseEntity.ok(authService.googleLogin(email, fullName));
     }
 }
