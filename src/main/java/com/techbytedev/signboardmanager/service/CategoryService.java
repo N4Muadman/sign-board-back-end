@@ -36,9 +36,20 @@ public class CategoryService {
 
     // Lấy danh mục cha
     public List<Category> getParentCategories() {
-        return categoryRepository.findByParentCategoryIdIsNull();
-    }
+        List<Category> categories = categoryRepository.findByParentCategoryIdIsNull();
+        for (Category category : categories) {
+            if (category.getImageURL() != null) {
+                category.setImageURL("/images/" + category.getImageURL());
+            }
 
+            for (Category childCategory : category.getChildCategories()) {
+                if (childCategory.getImageURL() != null) {
+                    childCategory.setImageURL("/images/" + childCategory.getImageURL());
+                }
+            }
+        }
+        return categories;
+    }
     // Lấy danh mục con theo danh mục cha
     public List<Category> getChildCategories(int parentCategoryId) {
         Category parentCategory = getCategoryById(parentCategoryId);
