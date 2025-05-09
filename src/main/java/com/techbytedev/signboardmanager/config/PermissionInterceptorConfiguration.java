@@ -35,7 +35,7 @@ public class PermissionInterceptorConfiguration implements WebMvcConfigurer {
             "/api/cms/**",
             "/images/**",
             "/**.hot-update.json",
-            "/**.hot-update.js"
+            "/**.hot-update.js","/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"
         };
         registry.addInterceptor(permissionInterceptor())
                 .excludePathPatterns(whiteList);

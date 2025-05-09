@@ -5,6 +5,9 @@ import com.techbytedev.signboardmanager.entity.Permission;
 import com.techbytedev.signboardmanager.entity.Role;
 import com.techbytedev.signboardmanager.repository.PermissionRepository;
 import com.techbytedev.signboardmanager.repository.RoleRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -19,6 +22,8 @@ public class PermissionService {
     private final PermissionRepository permissionRepository;
     private final RoleRepository roleRepository;
     private final PermissionSpecification permissionSpecification;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public PermissionService(PermissionRepository permissionRepository,
                              RoleRepository roleRepository,
@@ -78,12 +83,11 @@ public class PermissionService {
         Permission permission = permissionRepository.findById(permissionId)
                 .orElseThrow(() -> new IllegalArgumentException("Quyền với ID " + permissionId + " không tồn tại"));
 
-        if (role.getPermissions().contains(permission)) {
-            throw new IllegalStateException("Quyền đã được gán cho vai trò này");
-        }
-
-        role.getPermissions().add(permission);
-        roleRepository.save(role);
+        Query query = entityManager.createNativeQuery(
+                "INSERT INTO role_permissions (role_id, permission_id) VALUES (:roleId, :permissionId)");
+        query.setParameter("roleId", roleId.intValue());
+        query.setParameter("permissionId", permissionId);
+        query.executeUpdate();
     }
 
     @Transactional
@@ -93,11 +97,13 @@ public class PermissionService {
         Permission permission = permissionRepository.findById(permissionId)
                 .orElseThrow(() -> new IllegalArgumentException("Quyền với ID " + permissionId + " không tồn tại"));
 
-        if (!role.getPermissions().contains(permission)) {
+        Query query = entityManager.createNativeQuery(
+                "DELETE FROM role_permissions WHERE role_id = :roleId AND permission_id = :permissionId");
+        query.setParameter("roleId", roleId.intValue());
+        query.setParameter("permissionId", permissionId);
+        int rowsAffected = query.executeUpdate();
+        if (rowsAffected == 0) {
             throw new IllegalStateException("Quyền không được gán cho vai trò này");
         }
-
-        role.getPermissions().remove(permission);
-        roleRepository.save(role);
     }
 }

@@ -58,12 +58,14 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/login/oauth2/**").permitAll()
-                .requestMatchers("/api/design/**","/api/products/**").permitAll()
+                .requestMatchers("/api/design/**", "/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/cms/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
                 .requestMatchers("/**.hot-update.json", "/**.hot-update.js").permitAll()
-                .requestMatchers("/api/v1/admin/**").authenticated()
+                // Cho phép truy cập Swagger UI và tài liệu OpenAPI
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/admin/**").authenticated()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception
