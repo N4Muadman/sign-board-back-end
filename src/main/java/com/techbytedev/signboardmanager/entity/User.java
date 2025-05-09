@@ -8,13 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Collections;
 
 @Entity
 @Table(name = "users")
@@ -23,7 +18,7 @@ import java.util.Collections;
 @Getter
 @Setter
 @NoArgsConstructor
-public class User implements UserDetails {
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -72,34 +67,6 @@ public class User implements UserDetails {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (roleName != null && !roleName.isEmpty()) {
-            return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + roleName));
-        }
-        return Collections.emptyList();
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return isActive;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return isActive && deletedAt == null;
-    }
 
     public void setRole(Role role) {
         this.role = role;

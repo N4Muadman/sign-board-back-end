@@ -5,29 +5,35 @@ import com.techbytedev.signboardmanager.entity.Permission;
 import com.techbytedev.signboardmanager.entity.Role;
 import com.techbytedev.signboardmanager.repository.PermissionRepository;
 import com.techbytedev.signboardmanager.repository.RoleRepository;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
-public class PermissionService  {
+public class PermissionService {
 
     private final PermissionRepository permissionRepository;
-        private final RoleRepository roleRepository;
+    private final RoleRepository roleRepository;
+    private final PermissionSpecification permissionSpecification;
 
-
-    public PermissionService(PermissionRepository permissionRepository, RoleRepository roleRepository) {
+    public PermissionService(PermissionRepository permissionRepository,
+                             RoleRepository roleRepository,
+                             PermissionSpecification permissionSpecification) {
         this.permissionRepository = permissionRepository;
         this.roleRepository = roleRepository;
+        this.permissionSpecification = permissionSpecification;
     }
 
     public Permission findById(Long id) {
         return permissionRepository.findById(id).orElse(null);
     }
 
-    public ResultPaginationDTO findAll(Specification<Permission> spec, Pageable pageable) {
+    public ResultPaginationDTO findAll(String name, String apiPath, String method, String module, Pageable pageable) {
+        Specification<Permission> spec = permissionSpecification.buildSpecification(name, apiPath, method, module);
         Page<Permission> page = permissionRepository.findAll(spec, pageable);
         ResultPaginationDTO result = new ResultPaginationDTO();
         result.setContent(page.getContent());
@@ -52,19 +58,46 @@ public class PermissionService  {
 
     public boolean exists(Permission permission) {
         return permissionRepository.existsByNameAndApiPathAndMethodAndModule(
-            permission.getName(),
-            permission.getApiPath(),
-            permission.getMethod(),
-            permission.getModule()
+                permission.getName(),
+                permission.getApiPath(),
+                permission.getMethod(),
+                permission.getModule()
         );
     }
 
+    @Transactional(readOnly = true)
     public boolean hasPermission(String roleName, String apiPath, String method) {
-        Role role = roleRepository.findByName(roleName).orElse(null);
-        if (role == null) {
-            return false;
+        List<Permission> permissions = permissionRepository.findByRoleNameAndApiPathAndMethod(roleName, apiPath, method);
+        return !permissions.isEmpty();
+    }
+
+    @Transactional
+    public void assignPermissionToRole(Long roleId, Long permissionId) {
+        Role role = roleRepository.findById(roleId.intValue())
+                .orElseThrow(() -> new IllegalArgumentException("Vai trò với ID " + roleId + " không tồn tại"));
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new IllegalArgumentException("Quyền với ID " + permissionId + " không tồn tại"));
+
+        if (role.getPermissions().contains(permission)) {
+            throw new IllegalStateException("Quyền đã được gán cho vai trò này");
         }
-        return role.getPermissions().stream()
-                .anyMatch(permission -> permission.getApiPath().equals(apiPath) && permission.getMethod().equals(method));
+
+        role.getPermissions().add(permission);
+        roleRepository.save(role);
+    }
+
+    @Transactional
+    public void revokePermissionFromRole(Long roleId, Long permissionId) {
+        Role role = roleRepository.findById(roleId.intValue())
+                .orElseThrow(() -> new IllegalArgumentException("Vai trò với ID " + roleId + " không tồn tại"));
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new IllegalArgumentException("Quyền với ID " + permissionId + " không tồn tại"));
+
+        if (!role.getPermissions().contains(permission)) {
+            throw new IllegalStateException("Quyền không được gán cho vai trò này");
+        }
+
+        role.getPermissions().remove(permission);
+        roleRepository.save(role);
     }
 }

@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -30,7 +29,7 @@ public class Role {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY) // Quay lại LAZY
     @JoinTable(
         name = "role_permissions",
         joinColumns = @JoinColumn(name = "role_id"),
@@ -38,12 +37,12 @@ public class Role {
     )
     @JsonIgnore
     @ToString.Exclude
-    private Set<Permission> permissions = new HashSet<>();
+    private Set<Permission> permissions;
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
     @JsonBackReference
     @ToString.Exclude
-    private Set<User> users = new HashSet<>();
+    private Set<User> users;
 
     @Override
     public String toString() {

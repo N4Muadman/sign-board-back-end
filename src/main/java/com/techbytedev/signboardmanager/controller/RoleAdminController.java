@@ -15,7 +15,7 @@ import com.techbytedev.signboardmanager.exception.InvalidException;
 import com.techbytedev.signboardmanager.service.RoleService;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/admin")
 public class RoleAdminController {
 
     private final RoleService roleService;

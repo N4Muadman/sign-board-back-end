@@ -4,6 +4,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.techbytedev.signboardmanager.entity.Role;
@@ -14,6 +16,7 @@ public interface RoleRepository extends JpaRepository<Role, Integer>, JpaSpecifi
 
     boolean existsByName(String name);
 
-
+@Query("SELECT r FROM Role r LEFT JOIN FETCH r.permissions WHERE r.name = :name")
+    Optional<Role> findByNameWithPermissions(@Param("name") String name);
      
 }

@@ -7,6 +7,8 @@ import com.techbytedev.signboardmanager.entity.Role;
 import com.techbytedev.signboardmanager.entity.User;
 import com.techbytedev.signboardmanager.repository.RoleRepository;
 import com.techbytedev.signboardmanager.repository.UserRepository;
+
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -191,10 +193,13 @@ public class UserService {
                 .map(this::convertToResponse);
     }
 
-    @Transactional(readOnly = true)
+      @Transactional(readOnly = true)
     public User findByUsername(String username) {
         User user = userRepository.findByUsername(username).orElse(null);
-        logger.debug("Found user: username={}", username);
+        if (user != null) {
+            // Chỉ tải role, không tải permissions
+            Hibernate.initialize(user.getRole());
+        }
         return user;
     }
 

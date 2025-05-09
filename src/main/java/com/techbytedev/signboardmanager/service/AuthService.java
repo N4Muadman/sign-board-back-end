@@ -84,15 +84,9 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("Authentication failed for user: " + request.getUsername());
-        }
-
         String username = authentication.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-
         String jwt = jwtUtil.generateToken(user);
         AuthResponse response = new AuthResponse(jwt);
         response.setUser(userService.convertToResponse(user));
