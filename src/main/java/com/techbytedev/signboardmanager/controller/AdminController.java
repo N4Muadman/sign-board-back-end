@@ -1,21 +1,15 @@
 package com.techbytedev.signboardmanager.controller;
 
+import com.techbytedev.signboardmanager.dto.request.ArticleRequest;
 import com.techbytedev.signboardmanager.dto.request.ProductRequest;
 import com.techbytedev.signboardmanager.dto.request.UserCreateRequest;
 import com.techbytedev.signboardmanager.dto.request.UserUpdateRequest;
 import com.techbytedev.signboardmanager.dto.response.CustomPageResponse;
 import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
-import com.techbytedev.signboardmanager.entity.Category;
-import com.techbytedev.signboardmanager.entity.Contact;
-import com.techbytedev.signboardmanager.entity.SiteSetting;
-import com.techbytedev.signboardmanager.entity.UserDesign;
+import com.techbytedev.signboardmanager.entity.*;
 import com.techbytedev.signboardmanager.repository.UserDesignRepository;
-import com.techbytedev.signboardmanager.service.CategoryService;
-import com.techbytedev.signboardmanager.service.ContactService;
-import com.techbytedev.signboardmanager.service.ProductService;
-import com.techbytedev.signboardmanager.service.SiteSettingService;
-import com.techbytedev.signboardmanager.service.UserService;
+import com.techbytedev.signboardmanager.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,9 +19,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -36,19 +34,21 @@ public class AdminController {
     private final UserDesignRepository userDesignRepository;
     private final UserService userService;
     private final ProductService productService;
-    @Autowired
-    private CategoryService categoryService;
-
-    @Autowired
-    private ContactService contactService;
-
+    private final CategoryService categoryService;
+    private final ContactService contactService;
+    private final ArticleService articleService;
     private final SiteSettingService siteSettingService;
+    private final MaterialService materialService;
 
-    public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService, SiteSettingService siteSettingService) {
+    public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService, CategoryService categoryService, ContactService contactService, ArticleService articleService, SiteSettingService siteSettingService, MaterialService materialService) {
         this.userDesignRepository = userDesignRepository;
         this.userService = userService;
         this.productService = productService;
+        this.categoryService = categoryService;
+        this.contactService = contactService;
+        this.articleService = articleService;
         this.siteSettingService = siteSettingService;
+        this.materialService = materialService;
     }
 
     // Quản lý thiết kế
@@ -260,7 +260,6 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
-
     @DeleteMapping("/product/delete/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/delete/{id}', 'DELETE')")
     public ResponseEntity<String> deleteProduct(@PathVariable int id) {
@@ -277,6 +276,128 @@ public class AdminController {
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/site-setting/**', 'PUT')")
     public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting) {
         return siteSettingService.updateSiteSetting(key, siteSetting);
+    }
+    // hiển thị danh sách article
+    @GetMapping("/article/list")
+    public ResponseEntity<Map<String, Object>> getListArticle(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "9") int size) {
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Article> articlePage = articleService.getAllArticles(pageable);
+
+        List<Article> articles = articlePage.getContent();
+        for (Article article : articles) {
+            if (article.getFeaturedImageUrl() != null) {
+                article.setFeaturedImageUrl("/images/" + article.getFeaturedImageUrl());
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", articles);
+        response.put("pageNumber", articlePage.getNumber() + 1);
+        response.put("pageSize", articlePage.getSize());
+        response.put("totalPages", articlePage.getTotalPages());
+        response.put("totalElements", articlePage.getTotalElements());
+        response.put("last", articlePage.isLast());
+
+        return ResponseEntity.ok(response);
+    }
+
+    // thêm
+    @PostMapping("/article/create")
+    public ResponseEntity<Article> createArticle(@RequestBody ArticleRequest dto) {
+        try {
+            Article article = articleService.createArticleFromDTO(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(article);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+    // up ảnh riêng
+    @PostMapping("/article/{id}/upload-image")
+    public ResponseEntity<String> uploadImage(@PathVariable int id, @RequestParam("file") MultipartFile file) {
+        try {
+            articleService.uploadImage(id, file);
+            return ResponseEntity.ok("Upload successful");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Upload failed");
+        }
+    }
+    // sửa
+    @PutMapping("/article/edit/{id}")
+    public ResponseEntity<Article> updateArticle(@PathVariable int id, @RequestBody ArticleRequest dto) {
+        try {
+            Article updatedArticle = articleService.updateArticle(id, dto);
+            return ResponseEntity.ok(updatedArticle);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+    // xóa
+    @DeleteMapping("/article/delete/{id}")
+    public ResponseEntity<String> delete(@PathVariable int id) {
+        try {
+            articleService.deleteArticle(id);
+            return new ResponseEntity<>("Xóa thành công", HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body("Không tìm thấy nội dung cần xóa");
+        }
+    }
+    // hiển thị danh sách
+    @GetMapping("/material/list")
+    public ResponseEntity<Map<String, Object>> getAllMaterials(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "9") int size) {
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Material> materialPage = materialService.getAllMaterials(pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", materialPage.getContent());
+        response.put("pageNumber", materialPage.getNumber() + 1);
+        response.put("pageSize", materialPage.getSize());
+        response.put("totalPages", materialPage.getTotalPages());
+        response.put("totalElements", materialPage.getTotalElements());
+        response.put("last", materialPage.isLast());
+
+        return ResponseEntity.ok(response);
+    }
+    // thêm
+    @PostMapping("/material/create")
+    public ResponseEntity<?> createMaterial(@RequestBody Material material) {
+        try {
+            Material saved = materialService.createMaterial(material);
+            return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
+    }
+    // sửa
+    @PutMapping("/material/edit/{id}")
+    public ResponseEntity<?> updateMaterial(@PathVariable int id, @RequestBody Material updatedMaterial) {
+        try {
+            Material updated = materialService.updateMaterial(id, updatedMaterial);
+            return ResponseEntity.ok(updated);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy vật liệu");
+        }
+    }
+    // xóa
+    @DeleteMapping("/material/delete/{id}")
+    public ResponseEntity<?> deleteMaterial(@PathVariable int id) {
+        try {
+            materialService.deleteMaterial(id);
+            return ResponseEntity.ok("Xóa vật liệu thành công");
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy vật liệu");
+        }
+    }
+
+    // tìm kiếm theo tên
+    @GetMapping("/material/search")
+    public ResponseEntity<List<Material>> searchMaterials(@RequestParam String name) {
+        return ResponseEntity.ok(materialService.searchMaterialsByName(name));
     }
 }
 

@@ -1,12 +1,10 @@
 package com.techbytedev.signboardmanager.controller;
 
-import com.techbytedev.signboardmanager.dto.request.ArticleRequest;
 import com.techbytedev.signboardmanager.entity.Article;
 import com.techbytedev.signboardmanager.service.ArticleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -61,59 +59,5 @@ public class ArticleController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         return ResponseEntity.ok(articles);
-    }
-    //ADMIN
-    // hiển thị danh sách article
-    @GetMapping("/list")
-    public ResponseEntity<List<Article>> getList() {
-        List<Article> article = articleService.getAllArticles();
-        for(Article articles : article)
-        {
-            if(articles.getFeaturedImageUrl() != null)
-            {
-                articles.setFeaturedImageUrl("/images/" + articles.getFeaturedImageUrl());
-            }
-        }
-        return new ResponseEntity<>(article, HttpStatus.OK);
-    }
-    // thêm
-    @PostMapping("/create")
-    public ResponseEntity<Article> createArticle(@RequestBody ArticleRequest dto) {
-        try {
-            Article article = articleService.createArticleFromDTO(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(article);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(null);
-        }
-    }
-    // up ảnh riêng
-    @PostMapping("/{id}/upload-image")
-    public ResponseEntity<String> uploadImage(@PathVariable int id, @RequestParam("file") MultipartFile file) {
-        try {
-            articleService.uploadImage(id, file);
-            return ResponseEntity.ok("Upload successful");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Upload failed");
-        }
-    }
-    // sửa
-    @PutMapping("/edit/{id}")
-    public ResponseEntity<Article> updateArticle(@PathVariable int id, @RequestBody ArticleRequest dto) {
-        try {
-            Article updatedArticle = articleService.updateArticle(id, dto);
-            return ResponseEntity.ok(updatedArticle);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-    }
-    // xóa
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> delete(@PathVariable int id) {
-        try {
-            articleService.deleteArticle(id);
-            return new ResponseEntity<>("Xóa thành công", HttpStatus.OK);
-        } catch (Exception e) {
-            return ResponseEntity.status(404).body("Không tìm thấy nội dung cần xóa");
-        }
     }
 }

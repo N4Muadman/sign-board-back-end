@@ -2,6 +2,8 @@ package com.techbytedev.signboardmanager.service;
 
 import com.techbytedev.signboardmanager.entity.Material;
 import com.techbytedev.signboardmanager.repository.MaterialRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.NoSuchElementException;
 
@@ -15,8 +17,8 @@ public class MaterialService {
     public MaterialService(MaterialRepository materialRepository) {
         this.materialRepository = materialRepository;
     }
-    public List<Material> getAllMaterials() {
-        return materialRepository.findAll();
+    public Page<Material> getAllMaterials(Pageable pageable) {
+        return materialRepository.findAll(pageable);
     }
     public Material createMaterial(Material material) {
         return materialRepository.save(material);

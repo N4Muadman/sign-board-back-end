@@ -18,14 +18,13 @@ public class ContactController {
     public ContactController(ContactService contactService) {
         this.contactService = contactService;
     }
-
-    //ADMIN
-    // danh sách liên hệ
-    @GetMapping("/list")
-    public ResponseEntity<List<Contact>> getList(){
-        return ResponseEntity.ok(contactService.getAllContacts());
-    }
     //CUSTOMER
+    // them liên hệ
+    @PostMapping("/create")
+    public ResponseEntity<Contact> createContact(@RequestBody Contact contact) {
+        Contact saveContact = contactService.saveContact(contact);
+        return new ResponseEntity<>(saveContact, HttpStatus.CREATED);
+    }
     // hiển thị đánh giá theo id của sản phẩm
     @GetMapping("/{productId}")
     public List<ContactResponse> getReviewsByProductId(@PathVariable int productId){
