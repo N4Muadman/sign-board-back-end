@@ -2,6 +2,8 @@ package com.techbytedev.signboardmanager.service;
 
 import com.techbytedev.signboardmanager.entity.SiteSetting;
 import com.techbytedev.signboardmanager.repository.SiteSettingRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,8 +16,8 @@ public class SiteSettingService {
         this.siteSettingRepository = siteSettingRepository;
     }
 
-    public List<SiteSetting> getAllSiteSettings() {
-        return siteSettingRepository.findAll();
+    public Page<SiteSetting> getAllSiteSettings(Pageable pageable) {
+        return siteSettingRepository.findAll(pageable);
     }
     // sửa nội dung
     public SiteSetting updateSiteSetting(int key, SiteSetting siteSetting) {
