@@ -22,7 +22,7 @@ public class RoleService {
     }
 
     public ResultPaginationDTO findAll(Specification<Role> spec, Pageable pageable) {
-        Page<Role> page = roleRepository.findAll(spec, pageable); // Sửa: spec trước, pageable sau
+        Page<Role> page = roleRepository.findAll(spec, pageable);
         ResultPaginationDTO result = new ResultPaginationDTO();
         result.setContent(page.getContent());
         result.setPage(page.getNumber());

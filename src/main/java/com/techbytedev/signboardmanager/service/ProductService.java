@@ -5,10 +5,6 @@ import com.techbytedev.signboardmanager.dto.response.MaterialResponse;
 import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.entity.*;
 import com.techbytedev.signboardmanager.repository.*;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,8 +32,8 @@ public class ProductService {
     }
 
     // lấy danh sách sản phẩm
-    public Page<Product> findAll(Pageable pageable) {
-        return productRepository.findAll(pageable);
+    public List<Product> findAll() {
+        return productRepository.findAll();
     }
 
     // thêm sản phẩm
@@ -169,33 +165,6 @@ public class ProductService {
     // xóa sản phẩm
     public void deleteProduct (int productId) {
         productRepository.deleteById(productId);
-    }
-    // hiển thị sản phẩm theo danh mục con
-    public Page<ProductResponse> getProductsByCategoryId(int categoryId, int page, int size) {
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Product> products = productRepository.findByCategory_Id((long) categoryId, pageable);
-
-        Page<ProductResponse> productResponses = products.map(product -> {
-            ProductResponse response = new ProductResponse();
-            response.setId(product.getId());
-            response.setName(product.getName());
-            response.setPrice(product.getPrice());
-            response.setDiscount(product.getDiscountPercent());
-            response.setDiscountPrice(product.getDiscountedPrice());
-
-            ProductImage primaryImage = product.getImages().stream()
-                    .filter(image -> image.isPrimary())
-                    .findFirst()
-                    .orElse(null);
-
-            if (primaryImage != null) {
-                response.setImageURL(primaryImage.getImageUrl());
-            }
-
-            return response;
-        });
-
-        return productResponses;
     }
     // hiển thị sản phẩm chi tiết theo id sản phẩm
     public ProductResponse getProductDetailsById(int productId) {
