@@ -1,6 +1,6 @@
 package com.techbytedev.signboardmanager.config;
 
-import com.techbytedev.signboardmanager.entity.User;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techbytedev.signboardmanager.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +27,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -63,7 +65,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/cms/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
                 .requestMatchers("/**.hot-update.json", "/**.hot-update.js").permitAll()
-                // Cho phép truy cập Swagger UI và tài liệu OpenAPI
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/api/admin/**").authenticated()
                 .anyRequest().authenticated()
@@ -82,7 +83,12 @@ public class SecurityConfig {
                 )
                 .successHandler(customAuthenticationSuccessHandler)
                 .failureHandler((request, response, exception) -> {
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "OAuth2 Login Failed: " + exception.getMessage());
+                    response.setContentType("application/json;charset=UTF-8"); // Đảm bảo UTF-8
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "access_denied");
+                    errorResponse.put("message", "Bạn đã hủy đăng nhập bằng Google.");
+                    new ObjectMapper().writeValue(response.getWriter(), errorResponse);
                 })
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -123,7 +129,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
-            User user = userService.findByUsername(username);
+            com.techbytedev.signboardmanager.entity.User user = userService.findByUsername(username);
             if (user == null) {
                 throw new UsernameNotFoundException("User not found: " + username);
             }

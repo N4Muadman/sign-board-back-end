@@ -204,28 +204,8 @@ public class AdminController {
         UserResponse updatedUser = userService.removeAdminRole(id);
         return ResponseEntity.ok(updatedUser);
     }
-    @GetMapping("/category/list")
-    public ResponseEntity<Map<String, Object>> getAllCategories(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Category> categoryPage = categoryService.getAllCategories(pageable);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", categoryPage.getContent());
-        response.put("pageNumber", categoryPage.getNumber() + 1);
-        response.put("pageSize", categoryPage.getSize());
-        response.put("totalPages", categoryPage.getTotalPages());
-        response.put("totalElements", categoryPage.getTotalElements());
-        response.put("last", categoryPage.isLast());
-
-        return ResponseEntity.ok(response);
-    }
-    @GetMapping("/category/search")
-    public ResponseEntity<List<Category>> searchCategory(@RequestParam String name) {
-        List<Category> categories = categoryService.searchCategory(name);
-        return new ResponseEntity<>(categories, HttpStatus.OK);
-    }
+    // Quản lý danh mục
     @PostMapping("/category/create")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/category/**', 'POST')")
     public ResponseEntity<Category> createCategory(@RequestBody Category category) {
@@ -251,42 +231,16 @@ public class AdminController {
             return ResponseEntity.status(404).body("Không tìm thấy danh mục");
         }
     }
-    // danh sách liên hệ
-    @GetMapping("/contact/list")
-    public ResponseEntity<Map<String, Object>> getAllContact(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
 
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Contact> contactPage = contactService.getAllContacts(pageable);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", contactPage.getContent());
-        response.put("pageNumber", contactPage.getNumber() + 1);
-        response.put("pageSize", contactPage.getSize());
-        response.put("totalPages", contactPage.getTotalPages());
-        response.put("totalElements", contactPage.getTotalElements());
-        response.put("last", contactPage.isLast());
-        return ResponseEntity.ok(response);
+    // Quản lý liên hệ
+    @PostMapping("/contact/create")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/contact/**', 'POST')")
+    public ResponseEntity<Contact> createContact(@RequestBody Contact contact) {
+        Contact saveContact = contactService.saveContact(contact);
+        return new ResponseEntity<>(saveContact, HttpStatus.CREATED);
     }
-    // lấy danh sách sản phẩm
-    @GetMapping("/product/list")
-    public ResponseEntity<Map<String, Object>> getList(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
 
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Product> productPage = productService.findAll(pageable);
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", productPage.getContent());
-        response.put("pageNumber", productPage.getNumber() + 1);
-        response.put("pageSize", productPage.getSize());
-        response.put("totalPages", productPage.getTotalPages());
-        response.put("totalElements", productPage.getTotalElements());
-        response.put("last", productPage.isLast());
-
-        return ResponseEntity.ok(response);
-    }
+    // Quản lý sản phẩm
     @PostMapping("/product/create")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/create', 'POST')")
     public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest productRequest) {
@@ -316,25 +270,8 @@ public class AdminController {
             return ResponseEntity.status(404).body("Không tìm thấy sản phẩm");
         }
     }
-    // hiển thị
-    @GetMapping("/site-setting/list")
-    public ResponseEntity<Map<String, Object>> getListSiteSetting(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
 
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<SiteSetting> siteSettingPage = siteSettingService.getAllSiteSettings(pageable);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", siteSettingPage.getContent());
-        response.put("pageNumber", siteSettingPage.getNumber() + 1);
-        response.put("pageSize", siteSettingPage.getSize());
-        response.put("totalPages", siteSettingPage.getTotalPages());
-        response.put("totalElements", siteSettingPage.getTotalElements());
-        response.put("last", siteSettingPage.isLast());
-
-        return ResponseEntity.ok(response);
-    }
+    // Quản lý cài đặt trang web
     @PutMapping("/site-setting/edit/{key}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/site-setting/**', 'PUT')")
     public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting) {
