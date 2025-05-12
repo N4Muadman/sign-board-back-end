@@ -4,7 +4,7 @@ import com.techbytedev.signboardmanager.dto.request.ArticleRequest;
 import com.techbytedev.signboardmanager.dto.request.ProductRequest;
 import com.techbytedev.signboardmanager.dto.request.UserCreateRequest;
 import com.techbytedev.signboardmanager.dto.request.UserUpdateRequest;
-import com.techbytedev.signboardmanager.dto.response.CustomPageResponse; // Thêm import
+import com.techbytedev.signboardmanager.dto.response.CustomPageResponse;
 import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.*;
@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -52,7 +53,9 @@ public class AdminController {
         this.inquiryService = inquiryService;
     }
 
+    // Quản lý thiết kế
     @GetMapping("/designs")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'GET')")
     public List<UserDesign> getSubmittedDesigns() {
         return userDesignRepository.findAll().stream()
                 .filter(design -> design.getStatus() == UserDesign.Status.SUBMITTED)
@@ -60,11 +63,13 @@ public class AdminController {
     }
 
     @GetMapping("/designs/all")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'GET')")
     public List<UserDesign> getAllDesigns() {
         return userDesignRepository.findAll();
     }
 
     @GetMapping("/designs/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'GET')")
     public ResponseEntity<UserDesign> getDesignById(@PathVariable Integer id) {
         UserDesign design = userDesignRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
@@ -72,6 +77,7 @@ public class AdminController {
     }
 
     @PutMapping("/designs/{id}/status")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'PUT')")
     public ResponseEntity<UserDesign> updateDesignStatus(
             @PathVariable Integer id,
             @RequestBody UpdateDesignStatusRequest request) {
@@ -89,24 +95,25 @@ public class AdminController {
     }
 
     @PutMapping("/designs/{id}/feedback")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'PUT')")
     public ResponseEntity<UserDesign> sendFeedback(
             @PathVariable Integer id,
             @RequestBody FeedbackRequest request) {
         UserDesign design = userDesignRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
 
-        design.setUserFeedback(request.feedback());
         design.setUpdatedAt(LocalDateTime.now());
         userDesignRepository.save(design);
         return ResponseEntity.ok(design);
     }
 
+    // Quản lý người dùng
     @GetMapping("/users")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/users/**', 'GET')")
     public CustomPageResponse<UserResponse> getAllUsers(
-            @RequestParam(defaultValue = "1") int page, // Mặc định page = 1
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort) {
-        // Trừ 1 để khớp với Spring Data JPA (bắt đầu từ 0)
         int adjustedPage = page - 1;
         if (adjustedPage < 0) {
             adjustedPage = 0;
@@ -116,7 +123,6 @@ public class AdminController {
         Pageable pageable = PageRequest.of(adjustedPage, size, Sort.by(direction, sortParams[0]));
         Page<UserResponse> userPage = userService.getAllUsers(pageable);
 
-        // Trả về CustomPageResponse với pageNumber bắt đầu từ 1
         return new CustomPageResponse<>(
                 userPage.getContent(),
                 userPage.getNumber(),
@@ -131,22 +137,25 @@ public class AdminController {
     }
 
     @GetMapping("/users/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/users/**', 'GET')")
     public UserResponse getUserById(@PathVariable Integer id) {
         return userService.getUserById(id);
     }
 
     @PostMapping("/users/create")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/users/**', 'POST')")
     public UserResponse createUser(@RequestBody UserCreateRequest request) {
         return userService.createUser(request);
     }
 
     @GetMapping("/users/search")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/users/**', 'GET')")
     public CustomPageResponse<UserResponse> searchUsers(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String roleName,
             @RequestParam(required = false) Boolean isActive,
-            @RequestParam(defaultValue = "1") int page, // Mặc định page = 1
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort) {
         int adjustedPage = page - 1;
@@ -172,23 +181,27 @@ public class AdminController {
     }
 
     @PutMapping("/users/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/users/**', 'PUT')")
     public UserResponse updateUser(@PathVariable Integer id, @RequestBody UserUpdateRequest request) {
         return userService.updateUser(id, request);
     }
 
     @DeleteMapping("/users/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/users/**', 'DELETE')")
     public ResponseEntity<String> deleteUser(@PathVariable Integer id) {
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully");
     }
 
     @PutMapping("/users/{id}/assign-admin")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/users/**', 'PUT')")
     public ResponseEntity<UserResponse> assignAdminRole(@PathVariable Integer id) {
         UserResponse updatedUser = userService.assignAdminRole(id);
         return ResponseEntity.ok(updatedUser);
     }
 
     @PutMapping("/users/{id}/remove-admin")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/users/**', 'PUT')")
     public ResponseEntity<UserResponse> removeAdminRole(@PathVariable Integer id) {
         UserResponse updatedUser = userService.removeAdminRole(id);
         return ResponseEntity.ok(updatedUser);
@@ -216,17 +229,20 @@ public class AdminController {
         return new ResponseEntity<>(categories, HttpStatus.OK);
     }
     @PostMapping("/category/create")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/category/**', 'POST')")
     public ResponseEntity<Category> createCategory(@RequestBody Category category) {
         Category saveCategory = categoryService.saveCategory(category);
         return new ResponseEntity<>(saveCategory, HttpStatus.CREATED);
     }
 
     @PutMapping("/category/edit/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/category/**', 'PUT')")
     public Category updateCategory(@PathVariable int id, @RequestBody Category category) {
         return categoryService.updateCategory(id, category);
     }
 
     @DeleteMapping("/category/delete/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/category/**', 'DELETE')")
     public ResponseEntity<String> deleteCategory(@PathVariable int id) {
         try {
             categoryService.deleteCategory(id);
@@ -239,6 +255,7 @@ public class AdminController {
     }
     // danh sách đánh giá
     @GetMapping("/contact/list")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/contact/**', 'GET')")
     public ResponseEntity<Map<String, Object>> getAllContact(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "9") int size) {
@@ -274,12 +291,14 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
     @PostMapping("/product/create")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/create', 'POST')")
     public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest productRequest) {
         ProductResponse productResponse = productService.createProduct(productRequest);
         return ResponseEntity.ok(productResponse);
     }
 
     @PutMapping("/product/edit/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/edit/{id}', 'PUT')")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable("id") int productId,
             @RequestBody ProductRequest productRequest) {
@@ -291,6 +310,7 @@ public class AdminController {
         }
     }
     @DeleteMapping("/product/delete/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/delete/{id}', 'DELETE')")
     public ResponseEntity<String> deleteProduct(@PathVariable int id) {
         try {
             productService.deleteProduct(id);
@@ -319,6 +339,7 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
     @PutMapping("/site-setting/edit/{key}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/site-setting/**', 'PUT')")
     public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting) {
         return siteSettingService.updateSiteSetting(key, siteSetting);
     }
@@ -461,7 +482,6 @@ public class AdminController {
             return ResponseEntity.ok(response);
     }
 }
-
 
 record UpdateDesignStatusRequest(UserDesign.Status status, String notes) {}
 record FeedbackRequest(String feedback) {}

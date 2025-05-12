@@ -17,27 +17,18 @@ public class UserDesign {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "design_name", length = 255)
-    private String designName;
+    @Column(name = "design_name", length = 255, nullable = false)
+    private String designName = "Unnamed Design"; // Gán giá trị mặc định
 
-    @Column(name = "canva_design_id", nullable = false, unique = true, length = 255)
-    private String canvaDesignId;
-
-    @Column(name = "canva_preview_url", columnDefinition = "TEXT")
-    private String canvaPreviewUrl;
-
-    @Column(name = "canva_export_link", columnDefinition = "TEXT")
-    private String canvaExportLink;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Status status = Status.DRAFT;
+    @Column(name = "design_source", columnDefinition = "TEXT")
+    private String designSource; // Lưu link Canva hoặc đường dẫn ảnh
 
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @Column(name = "user_feedback", columnDefinition = "TEXT")
-    private String userFeedback;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status = Status.DRAFT;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

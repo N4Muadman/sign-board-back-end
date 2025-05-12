@@ -1,8 +1,11 @@
 package com.techbytedev.signboardmanager.util;
 
+import com.techbytedev.signboardmanager.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -15,6 +18,8 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
+
     @Value("${jwt.secret}")
     private String secret;
 
@@ -25,17 +30,17 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // Tạo token cho UserDetails (đăng nhập thông thường)
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", userDetails.getAuthorities().iterator().next().getAuthority());
-        return createToken(claims, userDetails.getUsername());
+        claims.put("role", user.getRoleName());
+        logger.debug("Generating token for user: {}", user.getUsername());
+        return createToken(claims, user.getUsername());
     }
 
-    // Tạo token cho người dùng từ Google OAuth2
     public String generateTokenForOAuth2User(String email, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        logger.debug("Generating token for OAuth2 user: {}", email);
         return createToken(claims, email);
     }
 

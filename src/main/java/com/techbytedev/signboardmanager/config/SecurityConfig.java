@@ -1,14 +1,21 @@
 package com.techbytedev.signboardmanager.config;
 
-import org.springframework.beans.factory.ObjectProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techbytedev.signboardmanager.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,23 +26,30 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final ObjectProvider<CustomOidcUserService> customOidcUserServiceProvider;
+    private final CustomOidcUserService customOidcUserService;
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    private final UserService userService;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          ObjectProvider<CustomOidcUserService> customOidcUserServiceProvider,
-                          CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler) {
+    @Autowired
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            @Lazy CustomOidcUserService customOidcUserService,
+            @Lazy CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler,
+            @Lazy UserService userService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.customOidcUserServiceProvider = customOidcUserServiceProvider;
+        this.customOidcUserService = customOidcUserService;
         this.customAuthenticationSuccessHandler = customAuthenticationSuccessHandler;
+        this.userService = userService;
     }
 
     @Bean
@@ -45,10 +59,14 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/login/oauth2/**").permitAll() // Cho phép tất cả các endpoint liên quan đến OAuth2
-                .requestMatchers("/api/design/**").permitAll()
+                .requestMatchers("/api/auth/**", "/login/oauth2/**").permitAll()
+                .requestMatchers("/api/design/**", "/api/products/**").permitAll()
+                .requestMatchers("/api/categories/**").permitAll()
+                .requestMatchers("/api/cms/**").permitAll()
+                .requestMatchers("/images/**").permitAll()
                 .requestMatchers("/**.hot-update.json", "/**.hot-update.js").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("Admin")
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/admin/**").authenticated()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception
@@ -61,11 +79,16 @@ public class SecurityConfig {
                     .baseUri("/login/oauth2/code/*")
                 )
                 .userInfoEndpoint(userInfo -> userInfo
-                    .oidcUserService(customOidcUserServiceProvider.getObject())
+                    .oidcUserService(customOidcUserService)
                 )
                 .successHandler(customAuthenticationSuccessHandler)
                 .failureHandler((request, response, exception) -> {
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "OAuth2 Login Failed: " + exception.getMessage());
+                    response.setContentType("application/json;charset=UTF-8"); // Đảm bảo UTF-8
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "access_denied");
+                    errorResponse.put("message", "Bạn đã hủy đăng nhập bằng Google.");
+                    new ObjectMapper().writeValue(response.getWriter(), errorResponse);
                 })
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -93,5 +116,32 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder);
+        return authProvider;
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return username -> {
+            com.techbytedev.signboardmanager.entity.User user = userService.findByUsername(username);
+            if (user == null) {
+                throw new UsernameNotFoundException("User not found: " + username);
+            }
+            return new org.springframework.security.core.userdetails.User(
+                    user.getUsername(),
+                    user.getPassword(),
+                    user.isActive() && user.getDeletedAt() == null,
+                    true,
+                    true,
+                    true,
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + (user.getRoleName() != null ? user.getRoleName() : "USER")))
+            );
+        };
     }
 }
