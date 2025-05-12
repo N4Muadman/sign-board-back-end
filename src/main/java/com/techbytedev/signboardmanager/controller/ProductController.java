@@ -20,13 +20,6 @@ public class ProductController {
         this.productService = productService;
     }
 
-    // ADMIN: Lấy danh sách sản phẩm
-    @GetMapping("/list")
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/products/list', 'GET')")
-    public ResponseEntity<List<Product>> getList() {
-        return ResponseEntity.ok(productService.findAll());
-    }
-
     // CUSTOMER: Hiển thị chi tiết sản phẩm
     @GetMapping("/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/products/{id}', 'GET')")
