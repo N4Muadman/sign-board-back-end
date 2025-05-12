@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -23,13 +24,16 @@ public class Role {
     @Column
     private String description;
 
+    @Column(name = "active", nullable = false)
+    private Boolean active = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @ManyToMany(fetch = FetchType.LAZY) // Quay lại LAZY
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "role_permissions",
         joinColumns = @JoinColumn(name = "role_id"),
@@ -37,7 +41,7 @@ public class Role {
     )
     @JsonIgnore
     @ToString.Exclude
-    private Set<Permission> permissions;
+    private Set<Permission> permissions = new HashSet<>(); // Khởi tạo để tránh NullPointerException
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
     @JsonBackReference
@@ -46,6 +50,6 @@ public class Role {
 
     @Override
     public String toString() {
-        return "Role{id=" + id + ", name='" + name + "', description='" + description + "'}";
+        return "Role{id=" + id + ", name='" + name + "', description='" + description + "', active=" + active + "}";
     }
 }

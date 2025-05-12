@@ -1,21 +1,23 @@
 package com.techbytedev.signboardmanager.controller;
-import jakarta.validation.Valid;
 
+import com.techbytedev.signboardmanager.dto.request.RoleCreateDTO;
+import com.techbytedev.signboardmanager.dto.request.RoleFilterDTO;
+import com.techbytedev.signboardmanager.dto.request.RoleUpdateDTO;
+import com.techbytedev.signboardmanager.dto.response.ResultPaginationDTO;
+import com.techbytedev.signboardmanager.dto.response.RoleResponseDTO;
+import com.techbytedev.signboardmanager.entity.Role;
+import com.techbytedev.signboardmanager.service.RoleService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.turkraft.springfilter.boot.Filter;
 
-
-import com.techbytedev.signboardmanager.dto.response.ResultPaginationDTO;
-import com.techbytedev.signboardmanager.entity.Role;
-import com.techbytedev.signboardmanager.exception.InvalidException;
-import com.techbytedev.signboardmanager.service.RoleService;
+import java.util.ArrayList;
+import java.util.Optional;
+import jakarta.persistence.criteria.Predicate;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/admin/roles")
 public class RoleAdminController {
 
     private final RoleService roleService;
@@ -24,42 +26,60 @@ public class RoleAdminController {
         this.roleService = roleService;
     }
 
-    @PostMapping("/roles")
-    public ResponseEntity<Role> create(@RequestBody @Valid Role role) throws InvalidException {
-        if (roleService.existsByName(role.getName())) {
-            throw new InvalidException("Vai trò với tên '" + role.getName() + "' đã tồn tại");
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(roleService.create(role));
+    @GetMapping
+    public ResponseEntity<ResultPaginationDTO> fetchAll(
+            RoleFilterDTO filter,
+            Pageable pageable
+    ) {
+        Specification<Role> spec = buildSpecification(filter);
+        ResultPaginationDTO result = roleService.fetchAll(spec, pageable);
+        return ResponseEntity.ok(result);
     }
 
-    @PutMapping("/roles")
-    public ResponseEntity<Role> update(@RequestBody @Valid Role role) throws InvalidException {
-        if (roleService.findById(role.getId()) == null) {
-            throw new InvalidException("Vai trò với ID " + role.getId() + " không tồn tại");
-        }
-        return ResponseEntity.ok(roleService.update(role));
+    @PostMapping
+    public ResponseEntity<RoleResponseDTO> create(@RequestBody RoleCreateDTO request) {
+        RoleResponseDTO response = roleService.create(request);
+        return ResponseEntity.status(201).body(response);
     }
 
-    @DeleteMapping("/roles/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Integer id) throws InvalidException {
-        if (roleService.findById(id) == null) {
-            throw new InvalidException("Vai trò với ID " + id + " không tồn tại");
-        }
+    @PutMapping("/{id}")
+    public ResponseEntity<RoleResponseDTO> update(
+            @PathVariable Integer id,
+            @RequestBody RoleUpdateDTO request
+    ) {
+        RoleResponseDTO response = roleService.update(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
         roleService.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/roles")
-    public ResponseEntity<ResultPaginationDTO> fetchAll(@Filter Specification<Role> spec, Pageable pageable) {
-        return ResponseEntity.ok(roleService.findAll(spec, pageable));
-    }
+    private Specification<Role> buildSpecification(RoleFilterDTO filter) {
+        return (root, query, criteriaBuilder) -> {
+            if (filter == null) {
+                return null;
+            }
 
-    @GetMapping("/roles/{id}")
-    public ResponseEntity<Role> fetchById(@PathVariable("id") Integer id) throws InvalidException {
-        Role role = roleService.findById(id);
-        if (role == null) {
-            throw new InvalidException("Vai trò với ID " + id + " không tồn tại");
-        }
-        return ResponseEntity.ok(role);
+            var predicates = Optional.ofNullable(filter)
+                    .map(f -> {
+                        var p = new ArrayList<Predicate>();
+                        if (f.getName() != null && !f.getName().isEmpty()) {
+                            p.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + f.getName().toLowerCase() + "%"));
+                        }
+                        if (f.getActive() != null) {
+                            p.add(criteriaBuilder.equal(root.get("active"), f.getActive()));
+                        }
+                        if (f.getDescription() != null && !f.getDescription().isEmpty()) {
+                            p.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), "%" + f.getDescription().toLowerCase() + "%"));
+                        }
+                        return p;
+                    })
+                    .orElse(new ArrayList<Predicate>());
+
+            return predicates.isEmpty() ? null : criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
     }
 }

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -37,7 +38,7 @@ public class Permission {
     @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
-    private Set<Role> roles;
+    private Set<Role> roles = new HashSet<>(); // Khởi tạo để tránh NullPointerException
 
     @Override
     public String toString() {

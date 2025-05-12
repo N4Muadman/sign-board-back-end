@@ -8,6 +8,7 @@ import com.techbytedev.signboardmanager.util.JwtUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true) // Đảm bảo chỉ đọc, không sửa đổi
 public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomAuthenticationSuccessHandler.class);
@@ -54,6 +56,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 return;
             }
 
+            // Tạo UserResponse mà không truy cập Role hoặc permissions trực tiếp
             String jwt = jwtUtil.generateToken(user);
             logger.debug("Generated JWT for user {}: {}", email, jwt);
 
@@ -65,7 +68,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             userResponse.setPhoneNumber(user.getPhoneNumber());
             userResponse.setAddress(user.getAddress());
             userResponse.setActive(user.isActive());
-            userResponse.setRoleName(user.getRoleName());
+            userResponse.setRoleName(user.getRoleName()); // Sử dụng roleName đã đồng bộ từ User
 
             AuthResponse authResponse = new AuthResponse();
             authResponse.setToken(jwt);
