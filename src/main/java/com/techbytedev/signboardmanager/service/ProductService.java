@@ -5,6 +5,8 @@ import com.techbytedev.signboardmanager.dto.response.MaterialResponse;
 import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.entity.*;
 import com.techbytedev.signboardmanager.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +34,8 @@ public class ProductService {
     }
 
     // lấy danh sách sản phẩm
-    public List<Product> findAll() {
-        return productRepository.findAll();
+    public Page<Product> findAll(Pageable pageable) {
+        return productRepository.findAll(pageable);
     }
 
     // thêm sản phẩm
