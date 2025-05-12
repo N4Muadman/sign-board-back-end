@@ -16,7 +16,7 @@ import java.util.List;
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "category_id")
+    @Column(name = "id")
     private int id;
 
     @Column(name = "name", nullable = false)
@@ -32,7 +32,7 @@ public class Category {
     private String imageURL;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "parent_category_id", referencedColumnName = "category_id", nullable = true)
+    @JoinColumn(name = "parent_category_id", referencedColumnName = "id", nullable = true)
     @JsonBackReference
     private Category parentCategory;
 

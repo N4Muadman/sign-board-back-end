@@ -2,10 +2,15 @@ package com.techbytedev.signboardmanager.repository;
 
 import com.techbytedev.signboardmanager.entity.UserDesign;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 public interface UserDesignRepository extends JpaRepository<UserDesign, Integer> {
-    List<UserDesign> findByUserIdAndDeletedAtIsNull(Integer userId);
-    List<UserDesign> findByStatusAndDeletedAtIsNull(UserDesign.Status status);
+    @Query("SELECT ud FROM UserDesign ud WHERE ud.user.id = :userId AND ud.deletedAt IS NULL")
+    List<UserDesign> findByUser_IdAndDeletedAtIsNull(@Param("userId") Integer userId);
+
+    @Query("SELECT ud FROM UserDesign ud WHERE ud.status = :status AND ud.deletedAt IS NULL")
+    List<UserDesign> findByStatusAndDeletedAtIsNull(@Param("status") UserDesign.Status status);
 }
