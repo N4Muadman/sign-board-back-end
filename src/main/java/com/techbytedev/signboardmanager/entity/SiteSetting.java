@@ -24,7 +24,6 @@ public class SiteSetting {
     private boolean isPublic;
 
     @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime updatedAt;
 
     public int getId() {

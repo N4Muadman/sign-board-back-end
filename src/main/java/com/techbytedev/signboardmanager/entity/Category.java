@@ -44,11 +44,9 @@ public class Category {
     private int sortOrder = 0;
 
     @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)

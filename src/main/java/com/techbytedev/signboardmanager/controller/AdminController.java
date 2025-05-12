@@ -38,8 +38,9 @@ public class AdminController {
     private final ArticleService articleService;
     private final SiteSettingService siteSettingService;
     private final MaterialService materialService;
+    private final InquiryService inquiryService;
 
-    public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService, CategoryService categoryService, ContactService contactService, ArticleService articleService, SiteSettingService siteSettingService, MaterialService materialService) {
+    public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService, CategoryService categoryService, ContactService contactService, ArticleService articleService, SiteSettingService siteSettingService, MaterialService materialService, InquiryService inquiryService) {
         this.userDesignRepository = userDesignRepository;
         this.userService = userService;
         this.productService = productService;
@@ -48,6 +49,7 @@ public class AdminController {
         this.articleService = articleService;
         this.siteSettingService = siteSettingService;
         this.materialService = materialService;
+        this.inquiryService = inquiryService;
     }
 
     @GetMapping("/designs")
@@ -235,7 +237,7 @@ public class AdminController {
             return ResponseEntity.status(404).body("Không tìm thấy danh mục");
         }
     }
-    // danh sách liên hệ
+    // danh sách đánh giá
     @GetMapping("/contact/list")
     public ResponseEntity<Map<String, Object>> getAllContact(
             @RequestParam(defaultValue = "1") int page,
@@ -442,7 +444,24 @@ public class AdminController {
     public ResponseEntity<List<Material>> searchMaterials(@RequestParam String name) {
         return ResponseEntity.ok(materialService.searchMaterialsByName(name));
     }
+    // danh sách liên hệ
+    @GetMapping("/inquiry/list")
+    public ResponseEntity<Map<String, Object>> getAllInquiries(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "9") int size) {
+            Pageable pageable = PageRequest.of(page - 1, size);
+            Page<Inquiry> inquiryPage = inquiryService.getAllInquiries(pageable);
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", inquiryPage.getContent());
+            response.put("pageNumber", inquiryPage.getNumber() + 1);
+            response.put("pageSize", inquiryPage.getSize());
+            response.put("totalPages", inquiryPage.getTotalPages());
+            response.put("totalElements", inquiryPage.getTotalElements());
+            response.put("last", inquiryPage.isLast());
+            return ResponseEntity.ok(response);
+    }
 }
+
 
 record UpdateDesignStatusRequest(UserDesign.Status status, String notes) {}
 record FeedbackRequest(String feedback) {}
