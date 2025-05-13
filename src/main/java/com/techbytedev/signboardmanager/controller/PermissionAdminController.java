@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin")
 public class PermissionAdminController {
@@ -23,7 +25,7 @@ public class PermissionAdminController {
 
     @GetMapping("/permissions/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/permissions/**', 'GET')")
-    public ResponseEntity<Permission> fetchById(@PathVariable("id") Long id) throws InvalidException {
+    public ResponseEntity<Permission> layTheoId(@PathVariable("id") Long id) throws InvalidException {
         Permission permission = permissionService.findById(id);
         if (permission == null) {
             throw new InvalidException("Quyền với ID " + id + " không tồn tại");
@@ -33,18 +35,18 @@ public class PermissionAdminController {
 
     @GetMapping("/permissions")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/permissions/**', 'GET')")
-    public ResponseEntity<ResultPaginationDTO> fetchAll(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String apiPath,
-            @RequestParam(required = false) String method,
+    public ResponseEntity<ResultPaginationDTO> layTatCa(
+            @RequestParam(required = false) String ten,
+            @RequestParam(required = false) String duongDanApi,
+            @RequestParam(required = false) String phuongThuc,
             @RequestParam(required = false) String module,
             Pageable pageable) {
-        return ResponseEntity.ok(permissionService.findAll(name, apiPath, method, module, pageable));
+        return ResponseEntity.ok(permissionService.findAll(ten, duongDanApi, phuongThuc, module, pageable));
     }
 
     @PostMapping("/permissions")
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/permissions/**', 'POST')")
-    public ResponseEntity<Permission> create(@RequestBody @Valid Permission permission) throws InvalidException {
+    @PreAuthorize("@permissionRequester.hasPermission(authentication, '/api/admin/permissions/**', 'POST')")
+    public ResponseEntity<Permission> tao(@RequestBody @Valid Permission permission) throws InvalidException {
         if (permissionService.exists(permission)) {
             throw new InvalidException("Quyền đã tồn tại");
         }
@@ -53,7 +55,7 @@ public class PermissionAdminController {
 
     @PutMapping("/permissions")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/permissions/**', 'PUT')")
-    public ResponseEntity<Permission> update(@RequestBody @Valid Permission permission) throws InvalidException {
+    public ResponseEntity<Permission> capNhat(@RequestBody @Valid Permission permission) throws InvalidException {
         if (permissionService.findById(permission.getId()) == null) {
             throw new InvalidException("Quyền với ID " + permission.getId() + " không tồn tại");
         }
@@ -65,7 +67,7 @@ public class PermissionAdminController {
 
     @DeleteMapping("/permissions/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/permissions/**', 'DELETE')")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long id) throws InvalidException {
+    public ResponseEntity<Void> xoa(@PathVariable("id") Long id) throws InvalidException {
         if (permissionService.findById(id) == null) {
             throw new InvalidException("Quyền với ID " + id + " không tồn tại");
         }
@@ -75,17 +77,17 @@ public class PermissionAdminController {
 
     @PostMapping("/permissions/assign")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/permissions/**', 'POST')")
-    public ResponseEntity<Void> assignPermissionToRole(@RequestBody RolePermissionRequest request) {
-        permissionService.assignPermissionToRole(request.roleId(), request.permissionId());
+    public ResponseEntity<Void> ganNhieuQuyenChoVaiTro(@RequestBody @Valid RolePermissionsRequest request) {
+        permissionService.assignPermissionsToRole(request.roleId(), request.permissionIds());
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/permissions/revoke")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/permissions/**', 'DELETE')")
-    public ResponseEntity<Void> revokePermissionFromRole(@RequestBody RolePermissionRequest request) {
-        permissionService.revokePermissionFromRole(request.roleId(), request.permissionId());
+    public ResponseEntity<Void> goNhieuQuyenTuVaiTro(@RequestBody @Valid RolePermissionsRequest request) {
+        permissionService.revokePermissionsFromRole(request.roleId(), request.permissionIds());
         return ResponseEntity.ok().build();
     }
 }
 
-record RolePermissionRequest(Long roleId, Long permissionId) {}
+record RolePermissionsRequest(Long roleId, List<Long> permissionIds) {}

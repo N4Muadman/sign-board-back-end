@@ -7,21 +7,17 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "user_designs")
-public class UserDesign {
+@Table(name = "user_design_template")
+@IdClass(UserDesignTemplateId.class)
+public class UserDesignTemplate {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "user_design_id")
+    private Long userDesignId;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
-
-    @Column(name = "design_image")
-    private String designImage;
-
-    @Column(name = "design_link")
-    private String designLink;
+    @Id
+    @Column(name = "design_template_id")
+    private Long designTemplateId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

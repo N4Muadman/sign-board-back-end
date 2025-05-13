@@ -38,18 +38,7 @@ public class DesignService {
         return designTemplateRepository.findByCategoryAndIsActiveTrueAndDeletedAtIsNull(category);
     }
 
-    @Transactional
-    public UserDesign saveDesignSubmission(Integer userId, UserDesign userDesign) {
-        logger.info("Saving design submission for user {} with designSource: {}", userId, userDesign.getDesignSource());
-
-        User user = userService.findById(userId);
-        userDesign.setUser(user);
-        userDesign.setCreatedAt(LocalDateTime.now());
-        userDesign.setUpdatedAt(LocalDateTime.now());
-
-        return userDesignRepository.save(userDesign);
-    }
-
+   
     @Transactional
     public String saveImageDesign(Integer userId, MultipartFile image) throws IOException {
         logger.info("Saving image design for user {}", userId);
@@ -69,7 +58,5 @@ public class DesignService {
         return userDesignRepository.findByUser_IdAndDeletedAtIsNull(userId);
     }
 
-    public List<UserDesign> getSubmittedDesigns() {
-        return userDesignRepository.findByStatusAndDeletedAtIsNull(UserDesign.Status.SUBMITTED);
-    }
+   
 }

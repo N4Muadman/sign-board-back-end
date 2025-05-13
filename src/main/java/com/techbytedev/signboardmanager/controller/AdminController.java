@@ -53,14 +53,7 @@ public class AdminController {
         this.inquiryService = inquiryService;
     }
 
-    // Quản lý thiết kế
-    @GetMapping("/designs")
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'GET')")
-    public List<UserDesign> getSubmittedDesigns() {
-        return userDesignRepository.findAll().stream()
-                .filter(design -> design.getStatus() == UserDesign.Status.SUBMITTED)
-                .toList();
-    }
+ 
 
     @GetMapping("/designs/all")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'GET')")
@@ -76,23 +69,7 @@ public class AdminController {
         return ResponseEntity.ok(design);
     }
 
-    @PutMapping("/designs/{id}/status")
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'PUT')")
-    public ResponseEntity<UserDesign> updateDesignStatus(
-            @PathVariable Integer id,
-            @RequestBody UpdateDesignStatusRequest request) {
-        UserDesign design = userDesignRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
-
-        design.setStatus(request.status());
-        if (request.notes() != null) {
-            design.setNotes(request.notes());
-        }
-        design.setUpdatedAt(LocalDateTime.now());
-        userDesignRepository.save(design);
-
-        return ResponseEntity.ok(design);
-    }
+    
 
     @PutMapping("/designs/{id}/feedback")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'PUT')")
@@ -483,5 +460,4 @@ public class AdminController {
     }
 }
 
-record UpdateDesignStatusRequest(UserDesign.Status status, String notes) {}
 record FeedbackRequest(String feedback) {}
