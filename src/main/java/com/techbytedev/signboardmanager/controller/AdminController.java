@@ -1,5 +1,6 @@
 package com.techbytedev.signboardmanager.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techbytedev.signboardmanager.dto.request.ArticleRequest;
 import com.techbytedev.signboardmanager.dto.request.ProductRequest;
 import com.techbytedev.signboardmanager.dto.request.UserCreateRequest;
@@ -41,8 +42,9 @@ public class AdminController {
     private final SiteSettingService siteSettingService;
     private final MaterialService materialService;
     private final InquiryService inquiryService;
+    private final ObjectMapper objectMapper;
 
-    public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService, CategoryService categoryService, ContactService contactService, ArticleService articleService, SiteSettingService siteSettingService, MaterialService materialService, InquiryService inquiryService) {
+    public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService, CategoryService categoryService, ContactService contactService, ArticleService articleService, SiteSettingService siteSettingService, MaterialService materialService, InquiryService inquiryService, ObjectMapper objectMapper) {
         this.userDesignRepository = userDesignRepository;
         this.userService = userService;
         this.productService = productService;
@@ -52,6 +54,7 @@ public class AdminController {
         this.siteSettingService = siteSettingService;
         this.materialService = materialService;
         this.inquiryService = inquiryService;
+        this.objectMapper = objectMapper;
     }
 
  
@@ -327,32 +330,37 @@ public class AdminController {
     }
 
     // thêm
-    @PostMapping("/article/create")
-    public ResponseEntity<Article> createArticle(@RequestBody ArticleRequest dto) {
+   @PostMapping(value = "/article/create", consumes = {"multipart/form-data"})
+    public ResponseEntity<Article> createArticle(
+            @RequestPart("article") String articleJson,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile) {
         try {
-            Article article = articleService.createArticleFromDTO(dto);
+            ArticleRequest dto = objectMapper.readValue(articleJson, ArticleRequest.class);
+            Article article = articleService.createArticleFromDTO(dto, imageFile);
             return ResponseEntity.status(HttpStatus.CREATED).body(article);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
-    // up ảnh riêng
-    @PostMapping("/article/{id}/upload-image")
-    public ResponseEntity<String> uploadImage(@PathVariable int id, @RequestParam("file") MultipartFile file) {
+
+    @PutMapping(value = "/article/edit/{id}", consumes = {"multipart/form-data"})
+    public ResponseEntity<Article> updateArticle(
+            @PathVariable int id,
+            @RequestPart("article") String articleJson,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile) {
         try {
-            articleService.uploadImage(id, file);
-            return ResponseEntity.ok("Upload successful");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Upload failed");
-        }
-    }
-    // sửa
-    @PutMapping("/article/edit/{id}")
-    public ResponseEntity<Article> updateArticle(@PathVariable int id, @RequestBody ArticleRequest dto) {
-        try {
-            Article updatedArticle = articleService.updateArticle(id, dto);
+            ArticleRequest dto = objectMapper.readValue(articleJson, ArticleRequest.class);
+            Article updatedArticle = articleService.updateArticle(id, dto, imageFile);
             return ResponseEntity.ok(updatedArticle);
-        } catch (Exception e) {
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }

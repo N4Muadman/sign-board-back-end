@@ -2,11 +2,17 @@ package com.techbytedev.signboardmanager.controller;
 
 import com.techbytedev.signboardmanager.entity.Article;
 import com.techbytedev.signboardmanager.service.ArticleService;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/cms")
@@ -38,6 +44,33 @@ public class ArticleController {
         }
 
         return ResponseEntity.ok(articles);
+    }
+
+     // hiển thị danh sách article
+    @GetMapping("/list")
+    public ResponseEntity<Map<String, Object>> getListArticle(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "9") int size) {
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Article> articlePage = articleService.getAllArticles(pageable);
+
+        List<Article> articles = articlePage.getContent();
+        for (Article article : articles) {
+            if (article.getFeaturedImageUrl() != null) {
+                article.setFeaturedImageUrl("/images/" + article.getFeaturedImageUrl());
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", articles);
+        response.put("pageNumber", articlePage.getNumber() + 1);
+        response.put("pageSize", articlePage.getSize());
+        response.put("totalPages", articlePage.getTotalPages());
+        response.put("totalElements", articlePage.getTotalElements());
+        response.put("last", articlePage.isLast());
+
+        return ResponseEntity.ok(response);
     }
 
     // hiển thị tin tức theo thời gian
