@@ -9,7 +9,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,23 +25,27 @@ public class ProductService {
     private final ProductMaterialRepository productMaterialRepository;
     private final MaterialRepository materialRepository;
     private final CategoryRepository categoryRepository;
+    private final FileStorageService fileStorageService;
 
-    public ProductService(ProductRepository productRepository, ProductMapper productMapper, ProductImageRepository productImageRepository, ProductMaterialRepository productMaterialRepository, MaterialRepository materialRepository, CategoryRepository categoryRepository) {
+    public ProductService(ProductRepository productRepository, ProductMapper productMapper,
+                          ProductImageRepository productImageRepository,
+                          ProductMaterialRepository productMaterialRepository,
+                          MaterialRepository materialRepository, CategoryRepository categoryRepository,
+                          FileStorageService fileStorageService) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.productImageRepository = productImageRepository;
         this.productMaterialRepository = productMaterialRepository;
         this.materialRepository = materialRepository;
         this.categoryRepository = categoryRepository;
+        this.fileStorageService = fileStorageService;
     }
 
-    // lấy danh sách sản phẩm
     public Page<Product> findAll(Pageable pageable) {
         return productRepository.findAll(pageable);
     }
 
-    // thêm sản phẩm
-    public ProductResponse createProduct(ProductRequest productRequest) {
+    public ProductResponse createProduct(ProductRequest productRequest, List<MultipartFile> imageFiles) throws IOException {
         Product product = new Product();
         product.setName(productRequest.getName());
         product.setSlug(productRequest.getSlug());
@@ -62,18 +68,23 @@ public class ProductService {
             productMaterialRepository.save(productMaterial);
         }
 
-        for (String imageUrl : productRequest.getImageURLs()) {
-            ProductImage productImage = new ProductImage();
-            productImage.setProduct(savedProduct);
-            productImage.setImageUrl(imageUrl);
-            productImageRepository.save(productImage);
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            for (MultipartFile imageFile : imageFiles) {
+                String fileName = fileStorageService.saveFile(imageFile);
+                if (fileName != null) {
+                    ProductImage productImage = new ProductImage();
+                    productImage.setProduct(savedProduct);
+                    productImage.setImageUrl(fileName);
+                    productImageRepository.save(productImage);
+                }
+            }
         }
 
         return convertToResponse(savedProduct);
     }
-    // sửa sản phẩm
+
     @Transactional
-    public ProductResponse updateProduct(int productId, ProductRequest productRequest) {
+    public ProductResponse updateProduct(int productId, ProductRequest productRequest, List<MultipartFile> imageFiles) throws IOException {
         Product existingProduct = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
@@ -91,7 +102,7 @@ public class ProductService {
         existingProduct.setCategory(category);
 
         updateMaterials(existingProduct, productRequest.getMaterialIds());
-        updateImages(existingProduct, productRequest.getImageURLs());
+        updateImages(existingProduct, imageFiles);
 
         return convertToResponse(existingProduct);
     }
@@ -120,28 +131,27 @@ public class ProductService {
             }
         }
     }
-    private void updateImages(Product product, List<String> newImageUrls) {
-        List<ProductImage> existingImages = productImageRepository.findByProductId(product.getId());
-        Set<String> existingUrls = existingImages.stream()
-                .map(ProductImage::getImageUrl)
-                .collect(Collectors.toSet());
 
-        Set<String> incomingUrls = new HashSet<>(newImageUrls);
-        for (ProductImage pi : existingImages) {
-            if (!incomingUrls.contains(pi.getImageUrl())) {
+    private void updateImages(Product product, List<MultipartFile> imageFiles) throws IOException {
+        List<ProductImage> existingImages = productImageRepository.findByProductId(product.getId());
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            for (ProductImage pi : existingImages) {
+                fileStorageService.deleteFile(pi.getImageUrl());
                 productImageRepository.delete(pi);
             }
-        }
 
-        for (String url : incomingUrls) {
-            if (!existingUrls.contains(url)) {
-                ProductImage newImage = new ProductImage();
-                newImage.setProduct(product);
-                newImage.setImageUrl(url);
-                productImageRepository.save(newImage);
+            for (MultipartFile imageFile : imageFiles) {
+                String fileName = fileStorageService.saveFile(imageFile);
+                if (fileName != null) {
+                    ProductImage newImage = new ProductImage();
+                    newImage.setProduct(product);
+                    newImage.setImageUrl(fileName);
+                    productImageRepository.save(newImage);
+                }
             }
         }
     }
+
     public ProductResponse convertToResponse(Product product) {
         ProductResponse response = new ProductResponse();
         response.setId(product.getId());
@@ -164,11 +174,20 @@ public class ProductService {
 
         return response;
     }
-    // xóa sản phẩm
-    public void deleteProduct (int productId) {
+
+    public void deleteProduct(int productId) {
+        List<ProductImage> images = productImageRepository.findByProductId(productId);
+        for (ProductImage image : images) {
+            try {
+                fileStorageService.deleteFile(image.getImageUrl());
+            } catch (IOException e) {
+                // Log lỗi nhưng không làm gián đoạn quá trình xóa
+            }
+            productImageRepository.delete(image);
+        }
         productRepository.deleteById(productId);
     }
-    // hiển thị sản phẩm chi tiết theo id sản phẩm
+
     public ProductResponse getProductDetailsById(int productId) {
         Optional<Product> productOpt = productRepository.findById(productId);
 
@@ -188,7 +207,7 @@ public class ProductService {
         productResponse.setDimensions(product.getDimensions());
 
         ProductImage primaryImage = productImages.stream()
-                .filter(image -> image.isPrimary())
+                .filter(ProductImage::isPrimary)
                 .findFirst()
                 .orElse(null);
         if (primaryImage != null) {
@@ -198,8 +217,7 @@ public class ProductService {
         for (ProductImage productImage : productImages) {
             productResponse.getImageURLs().add("/images/" + productImage.getImageUrl());
         }
-        List<ProductMaterial> productMaterials =
-                productMaterialRepository.findByProductId(productId);
+        List<ProductMaterial> productMaterials = productMaterialRepository.findByProductId(productId);
         List<MaterialResponse> materialResponses = new ArrayList<>();
 
         for (ProductMaterial productMaterial : productMaterials) {
@@ -214,6 +232,7 @@ public class ProductService {
         productResponse.setMaterials(materialResponses);
         return productResponse;
     }
+
     public List<ProductResponse> filterProducts(String name, Integer categoryId,
                                                 BigDecimal minPrice, BigDecimal maxPrice,
                                                 String sort) {

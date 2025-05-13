@@ -34,9 +34,9 @@ public class DesignService {
         this.userService = userService;
     }
 
-    public List<DesignTemplate> getTemplates(String category) {
-        return designTemplateRepository.findByCategoryAndIsActiveTrueAndDeletedAtIsNull(category);
-    }
+    // public List<DesignTemplate> getTemplates(String category) {
+    //     return designTemplateRepository.findByCategoryAndIsActiveTrueAndDeletedAtIsNull(category);
+    // }
 
    
     @Transactional
@@ -54,9 +54,7 @@ public class DesignService {
         return "uploads/" + fileName;
     }
 
-    public List<UserDesign> getUserDesigns(Integer userId) {
-        return userDesignRepository.findByUser_IdAndDeletedAtIsNull(userId);
-    }
+
 
    
 }

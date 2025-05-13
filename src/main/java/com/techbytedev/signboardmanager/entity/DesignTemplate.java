@@ -5,41 +5,38 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+@Data
 @Entity
 @Table(name = "design_templates")
-@Data
 public class DesignTemplate {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
-    @Column(nullable = false, length = 255)
-    private String name;
-
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    @Column(name = "preview_image_url", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "preview_image_url", nullable = false)
     private String previewImageUrl;
 
-    @Column(name = "suggested_dimensions", length = 100)
-    private String suggestedDimensions;
-
-    @Column(name = "canva_template_link", columnDefinition = "TEXT")
-    private String canvaTemplateLink;
-
-    @Column(length = 100)
-    private String category;
-
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    @Column(name = "canvas_template_link", nullable = false)
+    private String canvasTemplateLink;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

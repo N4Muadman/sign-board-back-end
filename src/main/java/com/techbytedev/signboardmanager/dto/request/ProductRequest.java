@@ -16,24 +16,7 @@ public class ProductRequest {
     private String description;
     private String dimensions;
     private List<Integer> materialIds = new ArrayList<>();
-    private List<String> imageURLs = new ArrayList<>();
     private int categoryId;
-
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public int getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(int categoryId) {
-        this.categoryId = categoryId;
-    }
 
     public String getName() {
         return name;
@@ -41,6 +24,14 @@ public class ProductRequest {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 
     public BigDecimal getPrice() {
@@ -91,11 +82,11 @@ public class ProductRequest {
         this.materialIds = materialIds;
     }
 
-    public List<String> getImageURLs() {
-        return imageURLs;
+    public int getCategoryId() {
+        return categoryId;
     }
 
-    public void setImageURLs(List<String> imageURLs) {
-        this.imageURLs = imageURLs;
+    public void setCategoryId(int categoryId) {
+        this.categoryId = categoryId;
     }
 }

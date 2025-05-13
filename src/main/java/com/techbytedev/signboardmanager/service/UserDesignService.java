@@ -2,6 +2,7 @@ package com.techbytedev.signboardmanager.service;
 
 import com.techbytedev.signboardmanager.entity.UserDesign;
 import com.techbytedev.signboardmanager.entity.UserDesignTemplate;
+import com.techbytedev.signboardmanager.entity.UserDesignTemplateId;
 import com.techbytedev.signboardmanager.repository.UserDesignRepository;
 import com.techbytedev.signboardmanager.repository.UserDesignTemplateRepository;
 import org.springframework.stereotype.Service;
@@ -63,7 +64,7 @@ public class UserDesignService {
         UserDesign userDesign = layTheoId(designId);
         if (userDesign == null) throw new IllegalArgumentException("Thiết kế không tồn tại");
         for (Long templateId : templateIds) {
-            userDesignTemplateRepository.deleteByUserDesignIdAndDesignTemplateId(designId, templateId);
+            userDesignTemplateRepository.deleteById(new UserDesignTemplateId(designId, templateId));
         }
     }
 }

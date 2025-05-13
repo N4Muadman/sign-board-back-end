@@ -25,4 +25,21 @@ public class UserDesignTemplateId implements Serializable {
     public int hashCode() {
         return 31 * userDesignId.hashCode() + designTemplateId.hashCode();
     }
+
+    // Getter và Setter
+    public Long getUserDesignId() {
+        return userDesignId;
+    }
+
+    public void setUserDesignId(Long userDesignId) {
+        this.userDesignId = userDesignId;
+    }
+
+    public Long getDesignTemplateId() {
+        return designTemplateId;
+    }
+
+    public void setDesignTemplateId(Long designTemplateId) {
+        this.designTemplateId = designTemplateId;
+    }
 }

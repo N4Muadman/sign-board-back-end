@@ -21,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -61,28 +62,28 @@ public class AdminController {
         return userDesignRepository.findAll();
     }
 
-    @GetMapping("/designs/{id}")
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'GET')")
-    public ResponseEntity<UserDesign> getDesignById(@PathVariable Integer id) {
-        UserDesign design = userDesignRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
-        return ResponseEntity.ok(design);
-    }
+    // @GetMapping("/designs/{id}")
+    // @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'GET')")
+    // public ResponseEntity<UserDesign> getDesignById(@PathVariable Integer id) {
+    //     UserDesign design = userDesignRepository.findById(id)
+    //             .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
+    //     return ResponseEntity.ok(design);
+    // }
 
     
 
-    @PutMapping("/designs/{id}/feedback")
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'PUT')")
-    public ResponseEntity<UserDesign> sendFeedback(
-            @PathVariable Integer id,
-            @RequestBody FeedbackRequest request) {
-        UserDesign design = userDesignRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
+    // @PutMapping("/designs/{id}/feedback")
+    // @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'PUT')")
+    // public ResponseEntity<UserDesign> sendFeedback(
+    //         @PathVariable Integer id,
+    //         @RequestBody FeedbackRequest request) {
+    //     UserDesign design = userDesignRepository.findById(id)
+    //             .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
 
-        design.setUpdatedAt(LocalDateTime.now());
-        userDesignRepository.save(design);
-        return ResponseEntity.ok(design);
-    }
+    //     design.setUpdatedAt(LocalDateTime.now());
+    //     userDesignRepository.save(design);
+    //     return ResponseEntity.ok(design);
+    // }
 
     // Quản lý người dùng
     @GetMapping("/users")
@@ -183,23 +184,7 @@ public class AdminController {
         UserResponse updatedUser = userService.removeAdminRole(id);
         return ResponseEntity.ok(updatedUser);
     }
-    @GetMapping("/category/list")
-    public ResponseEntity<Map<String, Object>> getAllCategories(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Category> categoryPage = categoryService.getAllCategories(pageable);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", categoryPage.getContent());
-        response.put("pageNumber", categoryPage.getNumber() + 1);
-        response.put("pageSize", categoryPage.getSize());
-        response.put("totalPages", categoryPage.getTotalPages());
-        response.put("totalElements", categoryPage.getTotalElements());
-        response.put("last", categoryPage.isLast());
-
-        return ResponseEntity.ok(response);
-    }
+    
     @GetMapping("/category/search")
     public ResponseEntity<List<Category>> searchCategory(@RequestParam String name) {
         List<Category> categories = categoryService.searchCategory(name);
@@ -249,39 +234,33 @@ public class AdminController {
         response.put("last", contactPage.isLast());
         return ResponseEntity.ok(response);
     }
-    // lấy danh sách sản phẩm
-    @GetMapping("/product/list")
-    public ResponseEntity<Map<String, Object>> getList(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
-
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Product> productPage = productService.findAll(pageable);
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", productPage.getContent());
-        response.put("pageNumber", productPage.getNumber() + 1);
-        response.put("pageSize", productPage.getSize());
-        response.put("totalPages", productPage.getTotalPages());
-        response.put("totalElements", productPage.getTotalElements());
-        response.put("last", productPage.isLast());
-
-        return ResponseEntity.ok(response);
-    }
-    @PostMapping("/product/create")
+  
+    @PostMapping(value = "/product/create", consumes = {"multipart/form-data"})
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/create', 'POST')")
-    public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest productRequest) {
-        ProductResponse productResponse = productService.createProduct(productRequest);
-        return ResponseEntity.ok(productResponse);
+    public ResponseEntity<ProductResponse> createProduct(
+            @RequestPart("product") ProductRequest productRequest,
+            @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) {
+        try {
+            ProductResponse productResponse = productService.createProduct(productRequest, imageFiles);
+            return ResponseEntity.ok(productResponse);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
-    @PutMapping("/product/edit/{id}")
+    @PutMapping(value = "/product/edit/{id}", consumes = {"multipart/form-data"})
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/edit/{id}', 'PUT')")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable("id") int productId,
-            @RequestBody ProductRequest productRequest) {
+            @RequestPart("product") ProductRequest productRequest,
+            @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) {
         try {
-            ProductResponse response = productService.updateProduct(productId, productRequest);
+            ProductResponse response = productService.updateProduct(productId, productRequest, imageFiles);
             return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }

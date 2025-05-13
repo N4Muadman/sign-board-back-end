@@ -64,6 +64,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/cms/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
+              
                 .requestMatchers("/**.hot-update.json", "/**.hot-update.js").permitAll()
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/api/admin/**").authenticated()
