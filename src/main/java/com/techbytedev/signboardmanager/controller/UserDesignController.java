@@ -1,12 +1,18 @@
 package com.techbytedev.signboardmanager.controller;
 
+import com.techbytedev.signboardmanager.dto.response.UserDesignResponseDTO;
+import com.techbytedev.signboardmanager.entity.User;
 import com.techbytedev.signboardmanager.entity.UserDesign;
 import com.techbytedev.signboardmanager.service.FileStorageService;
 import com.techbytedev.signboardmanager.service.UserDesignService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,27 +28,26 @@ public class UserDesignController {
     private static final Logger logger = LoggerFactory.getLogger(UserDesignController.class);
     private final UserDesignService userDesignService;
     private final FileStorageService fileStorageService;
+    private final com.techbytedev.signboardmanager.service.UserService userService;
 
-    public UserDesignController(UserDesignService userDesignService, FileStorageService fileStorageService) {
+    public UserDesignController(UserDesignService userDesignService, FileStorageService fileStorageService, com.techbytedev.signboardmanager.service.UserService userService) {
         this.userDesignService = userDesignService;
         this.fileStorageService = fileStorageService;
+        this.userService = userService;
         logger.info("UserDesignController initialized");
     }
 
     // Tạo thiết kế mới
-    @PostMapping("/{userId}")
+    @PostMapping("/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/user-designs/**', 'POST')")
     public ResponseEntity<UserDesign> taoThietKeNguoiDung(
-            @PathVariable("userId") Long userId,
+            @PathVariable("id") Long userId,
             @RequestParam(value = "designImage", required = false) MultipartFile designImage,
-            @RequestParam(value = "designLink", required = false) String designLink,
-            Authentication authentication) throws IOException {
+            @RequestParam(value = "designLink", required = false) String designLink
+            ) throws IOException {
         logger.debug("Creating user design for userId: {}", userId);
         // Kiểm tra quyền: Chỉ người dùng sở hữu mới được tạo
-        String username = authentication.getName();
-        if (!userDesignService.isUserAuthorized(userId, username)) {
-            logger.warn("User {} not authorized to create design for userId {}", username, userId);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+       
 
         UserDesign userDesign = new UserDesign();
         userDesign.setUserId(userId);
@@ -68,19 +73,29 @@ public class UserDesignController {
 
     // Xem danh sách thiết kế của người dùng hiện tại
     @GetMapping("/my-designs")
-    public ResponseEntity<List<UserDesign>> layThietKeCuaToi(Authentication authentication) {
-        logger.debug("Fetching designs for authenticated user");
-        String username = authentication.getName();
-        Long userId = userDesignService.getUserIdByUsername(username);
-        if (userId == null) {
-            logger.warn("User {} not found", username);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    public ResponseEntity<Page<UserDesignResponseDTO>> getAllUserDesigns(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        logger.debug("Fetching all user designs for admin with pagination: page={}, size={}", page, size);
 
-        List<UserDesign> designs = userDesignService.layTatCa().stream()
-                .filter(design -> design.getUserId().equals(userId))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(designs);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserDesign> designPage = userDesignService.layTatCa(pageable);
+
+        Page<UserDesignResponseDTO> responsePage = designPage.map(userDesign -> {
+            // Lấy thông tin người dùng từ userId
+            User user = userService.findById(userDesign.getUserId() != null ? userDesign.getUserId().intValue() : null);
+            return new UserDesignResponseDTO(
+                    userDesign.getId(),
+                    userDesign.getDesignImage(),
+                    userDesign.getDesignLink(),
+                    userDesign.getStatus(),
+                    user != null ? user.getFullName() : "Unknown",
+                    user != null ? user.getEmail() : "Unknown",
+                    user != null ? user.getPhoneNumber() : "Unknown"
+            );
+        });
+
+        return ResponseEntity.ok(responsePage);
     }
 
     // Xem chi tiết thiết kế của người dùng hiện tại

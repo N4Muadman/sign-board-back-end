@@ -56,7 +56,11 @@ public class RoleAdminController {
         roleService.delete(id);
         return ResponseEntity.noContent().build();
     }
-
+@GetMapping("/{id}")
+    public ResponseEntity<RoleResponseDTO> fetchById(@PathVariable Integer id) {
+        RoleResponseDTO response = roleService.fetchById(id);
+        return ResponseEntity.ok(response);
+    }
     private Specification<Role> buildSpecification(RoleFilterDTO filter) {
         return (root, query, criteriaBuilder) -> {
             if (filter == null) {

@@ -8,6 +8,7 @@ import com.techbytedev.signboardmanager.dto.request.UserCreateRequest;
 import com.techbytedev.signboardmanager.dto.request.UserUpdateRequest;
 import com.techbytedev.signboardmanager.dto.response.CustomPageResponse;
 import com.techbytedev.signboardmanager.dto.response.ProductResponse;
+import com.techbytedev.signboardmanager.dto.response.UserDesignResponseDTO;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.*;
 import com.techbytedev.signboardmanager.repository.UserDesignRepository;
@@ -69,12 +70,31 @@ public class AdminController {
     }
 
     // Xem danh sách các thiết kế
-    @GetMapping("/user-designs")
+   @GetMapping("/user-designs")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'GET')")
-    public ResponseEntity<List<UserDesign>> getAllUserDesigns() {
-        logger.debug("Fetching all user designs for admin");
-        List<UserDesign> designs = userDesignService.layTatCa();
-        return ResponseEntity.ok(designs);
+    public ResponseEntity<Page<UserDesignResponseDTO>> getAllUserDesigns(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        logger.debug("Fetching all user designs for admin with pagination: page={}, size={}", page, size);
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserDesign> designPage = userDesignService.layTatCa(pageable);
+
+        Page<UserDesignResponseDTO> responsePage = designPage.map(userDesign -> {
+            // Lấy thông tin người dùng từ userId
+            User user = userService.findById(userDesign.getUserId() != null ? userDesign.getUserId().intValue() : null);
+            return new UserDesignResponseDTO(
+                    userDesign.getId(),
+                    userDesign.getDesignImage(),
+                    userDesign.getDesignLink(),
+                    userDesign.getStatus(),
+                    user != null ? user.getFullName() : "Unknown",
+                    user != null ? user.getEmail() : "Unknown",
+                    user != null ? user.getPhoneNumber() : "Unknown"
+            );
+        });
+
+        return ResponseEntity.ok(responsePage);
     }
 
     // Xem chi tiết thiết kế và thông tin liên hệ người dùng

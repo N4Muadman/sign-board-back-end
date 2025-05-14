@@ -5,6 +5,9 @@ import com.techbytedev.signboardmanager.entity.UserDesignTemplate;
 import com.techbytedev.signboardmanager.entity.UserDesignTemplateId;
 import com.techbytedev.signboardmanager.repository.UserDesignRepository;
 import com.techbytedev.signboardmanager.repository.UserDesignTemplateRepository;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,8 +30,8 @@ public class UserDesignService {
         return userDesignRepository.save(userDesign);
     }
 
-    public List<UserDesign> layTatCa() {
-        return userDesignRepository.findAllByDeletedAtIsNull();
+   public Page<UserDesign> layTatCa(Pageable pageable) {
+        return userDesignRepository.findAllByDeletedAtIsNull(pageable);
     }
 
     public UserDesign layTheoId(Long id) {

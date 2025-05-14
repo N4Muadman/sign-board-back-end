@@ -46,7 +46,12 @@ public class RoleService {
         Role savedRole = roleRepository.save(role);
         return convertToRoleResponseDTO(savedRole);
     }
-
+@Transactional(readOnly = true)
+    public RoleResponseDTO fetchById(Integer id) {
+        Role role = roleRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found with id: " + id));
+        return convertToRoleResponseDTO(role);
+    }
     @Transactional
     public RoleResponseDTO update(Integer id, RoleUpdateDTO request) {
         Role role = roleRepository.findById(id)
