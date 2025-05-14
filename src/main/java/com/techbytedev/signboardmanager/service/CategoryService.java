@@ -27,7 +27,6 @@ public class CategoryService {
                 .orElse(null);
     }
 
-    // Lấy tất cả ID danh mục, bao gồm danh mục con đệ quy
     public List<Integer> getCategoryAndSubcategoryIds(int categoryId) {
         List<Integer> categoryIds = new ArrayList<>();
         categoryIds.add(categoryId);
@@ -55,7 +54,7 @@ public class CategoryService {
                 category.setImageURL("/images/" + category.getImageURL());
             }
             for (Category childCategory : category.getChildCategories()) {
-                if(childCategory.getImageURL() != null) {
+                if (childCategory.getImageURL() != null) {
                     childCategory.setImageURL("/images/" + childCategory.getImageURL());
                 }
             }

@@ -90,9 +90,11 @@ public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) 
         return convertToResponse(savedProduct);
     }
 
-    @Transactional
+   @Transactional
     public Page<Product> getProductsByCategoryAndSubcategories(int categoryId, Pageable pageable) {
+        // Lấy danh sách ID danh mục và danh mục con
         List<Integer> categoryIds = categoryService.getCategoryAndSubcategoryIds(categoryId);
+        // Truy vấn sản phẩm dựa trên danh sách ID danh mục
         return productRepository.findByCategoryIdIn(categoryIds, pageable);
     }
 
