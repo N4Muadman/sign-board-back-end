@@ -26,18 +26,49 @@ public class CategoryController {
         this.productService = productService;
     }
 
-    //CUSTOMER
-    // hiển thị danh mục cha
     @GetMapping("/parent")
     public List<Category> getParentCategories() {
         return categoryService.getParentCategories();
     }
-    // hiển thị danh mục con theo danh mục cha
+
     @GetMapping("/child/{parentId}")
     public ResponseEntity<List<Category>> getChildCategories(@PathVariable("parentId") int parentId) {
         List<Category> childCategories = categoryService.getChildCategories(parentId);
         return ResponseEntity.ok(childCategories);
     }
+
+    @GetMapping("/{categoryId}/products")
+    public ResponseEntity<Map<String, Object>> getProductsByCategoryId(
+            @PathVariable int categoryId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Category category = categoryService.getCategoryById(categoryId);
+            if (category == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Danh mục không tồn tại");
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+            }
+
+            Pageable pageable = PageRequest.of(page - 1, size);
+            Page<Product> productPage = productService.getProductsByCategoryAndSubcategories(categoryId, pageable);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", productPage.getContent());
+            response.put("pageNumber", productPage.getNumber() + 1);
+            response.put("pageSize", productPage.getSize());
+            response.put("totalPages", productPage.getTotalPages());
+            response.put("totalElements", productPage.getTotalElements());
+            response.put("last", productPage.isLast());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Lỗi khi lấy danh sách sản phẩm: " + e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> getAllCategories(
             @RequestParam(defaultValue = "1") int page,

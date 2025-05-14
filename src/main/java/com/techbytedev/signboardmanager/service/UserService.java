@@ -18,6 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -72,6 +75,19 @@ public class UserService {
         userRepository.save(user);
 
         return convertToResponse(user);
+    }
+
+    public Map<String, String> getUserContactInfo(Long userId) {
+        Optional<User> userOptional = userRepository.findByIdAndDeletedAtIsNull(userId.intValue());
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            Map<String, String> contactInfo = new HashMap<>();
+            contactInfo.put("fullName", user.getFullName() != null ? user.getFullName() : "Unknown");
+            contactInfo.put("email", user.getEmail() != null ? user.getEmail() : "N/A");
+            contactInfo.put("phoneNumber", user.getPhoneNumber() != null ? user.getPhoneNumber() : "N/A");
+            return contactInfo;
+        }
+        return Map.of("fullName", "Unknown", "email", "N/A", "phoneNumber", "N/A");
     }
 
     public void deleteUser(Integer id) {

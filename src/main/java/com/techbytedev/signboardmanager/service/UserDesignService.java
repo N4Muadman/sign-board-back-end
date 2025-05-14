@@ -15,10 +15,12 @@ public class UserDesignService {
 
     private final UserDesignRepository userDesignRepository;
     private final UserDesignTemplateRepository userDesignTemplateRepository;
+    private final UserService userService;
 
-    public UserDesignService(UserDesignRepository userDesignRepository, UserDesignTemplateRepository userDesignTemplateRepository) {
+    public UserDesignService(UserDesignRepository userDesignRepository, UserDesignTemplateRepository userDesignTemplateRepository, UserService userService) {
         this.userDesignRepository = userDesignRepository;
         this.userDesignTemplateRepository = userDesignTemplateRepository;
+        this.userService = userService;
     }
 
     public UserDesign tao(UserDesign userDesign) {
@@ -38,6 +40,7 @@ public class UserDesignService {
         if (existingDesign == null) return null;
         existingDesign.setDesignImage(userDesign.getDesignImage());
         existingDesign.setDesignLink(userDesign.getDesignLink());
+        existingDesign.setStatus(userDesign.getStatus());
         return userDesignRepository.save(existingDesign);
     }
 
@@ -66,5 +69,17 @@ public class UserDesignService {
         for (Long templateId : templateIds) {
             userDesignTemplateRepository.deleteById(new UserDesignTemplateId(designId, templateId));
         }
+    }
+
+    // Kiểm tra quyền: Người dùng chỉ được thao tác với thiết kế của chính họ
+    public boolean isUserAuthorized(Long userId, String username) {
+        com.techbytedev.signboardmanager.entity.User user = userService.findByUsername(username);
+        return user != null && user.getId().equals(userId);
+    }
+
+    // Lấy userId từ username
+    public Long getUserIdByUsername(String username) {
+        com.techbytedev.signboardmanager.entity.User user = userService.findByUsername(username);
+        return user != null ? user.getId() != null ? user.getId().longValue() : null : null;
     }
 }

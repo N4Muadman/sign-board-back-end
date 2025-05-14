@@ -26,12 +26,14 @@ public class ProductService {
     private final MaterialRepository materialRepository;
     private final CategoryRepository categoryRepository;
     private final FileStorageService fileStorageService;
+    private final CategoryService categoryService;
 
     public ProductService(ProductRepository productRepository, ProductMapper productMapper,
                           ProductImageRepository productImageRepository,
                           ProductMaterialRepository productMaterialRepository,
                           MaterialRepository materialRepository, CategoryRepository categoryRepository,
-                          FileStorageService fileStorageService) {
+                          FileStorageService fileStorageService,
+                          CategoryService categoryService) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.productImageRepository = productImageRepository;
@@ -39,12 +41,17 @@ public class ProductService {
         this.materialRepository = materialRepository;
         this.categoryRepository = categoryRepository;
         this.fileStorageService = fileStorageService;
+        this.categoryService = categoryService;
     }
 
     public Page<Product> findAll(Pageable pageable) {
         return productRepository.findAll(pageable);
     }
-
+// Trong ProductService.java
+@Transactional
+public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) {
+    return productRepository.findByCategoryId(categoryId, pageable);
+}
     public ProductResponse createProduct(ProductRequest productRequest, List<MultipartFile> imageFiles) throws IOException {
         Product product = new Product();
         product.setName(productRequest.getName());
@@ -81,6 +88,12 @@ public class ProductService {
         }
 
         return convertToResponse(savedProduct);
+    }
+
+    @Transactional
+    public Page<Product> getProductsByCategoryAndSubcategories(int categoryId, Pageable pageable) {
+        List<Integer> categoryIds = categoryService.getCategoryAndSubcategoryIds(categoryId);
+        return productRepository.findByCategoryIdIn(categoryIds, pageable);
     }
 
     @Transactional

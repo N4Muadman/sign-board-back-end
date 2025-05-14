@@ -23,6 +23,9 @@ public class UserDesign {
     @Column(name = "design_link")
     private String designLink;
 
+    @Column(name = "status")
+    private String status;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -36,6 +39,9 @@ public class UserDesign {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (status == null) {
+            status = "Mới";
+        }
     }
 
     @PreUpdate

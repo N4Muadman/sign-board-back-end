@@ -2,6 +2,7 @@ package com.techbytedev.signboardmanager.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techbytedev.signboardmanager.dto.request.ArticleRequest;
+import com.techbytedev.signboardmanager.dto.request.InquiryRequest;
 import com.techbytedev.signboardmanager.dto.request.ProductRequest;
 import com.techbytedev.signboardmanager.dto.request.UserCreateRequest;
 import com.techbytedev.signboardmanager.dto.request.UserUpdateRequest;
@@ -11,6 +12,8 @@ import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.*;
 import com.techbytedev.signboardmanager.repository.UserDesignRepository;
 import com.techbytedev.signboardmanager.service.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +36,8 @@ import java.util.NoSuchElementException;
 @RequestMapping("/api/admin")
 public class AdminController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
+
     private final UserDesignRepository userDesignRepository;
     private final UserService userService;
     private final ProductService productService;
@@ -43,8 +48,13 @@ public class AdminController {
     private final MaterialService materialService;
     private final InquiryService inquiryService;
     private final ObjectMapper objectMapper;
+    private final UserDesignService userDesignService;
 
-    public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService, CategoryService categoryService, ContactService contactService, ArticleService articleService, SiteSettingService siteSettingService, MaterialService materialService, InquiryService inquiryService, ObjectMapper objectMapper) {
+    @Autowired
+    public AdminController(UserDesignRepository userDesignRepository, UserService userService, ProductService productService,
+                           CategoryService categoryService, ContactService contactService, ArticleService articleService,
+                           SiteSettingService siteSettingService, MaterialService materialService, InquiryService inquiryService,
+                           ObjectMapper objectMapper, UserDesignService userDesignService) {
         this.userDesignRepository = userDesignRepository;
         this.userService = userService;
         this.productService = productService;
@@ -55,38 +65,91 @@ public class AdminController {
         this.materialService = materialService;
         this.inquiryService = inquiryService;
         this.objectMapper = objectMapper;
+        this.userDesignService = userDesignService;
     }
 
- 
-
-    @GetMapping("/designs/all")
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'GET')")
-    public List<UserDesign> getAllDesigns() {
-        return userDesignRepository.findAll();
+    // Xem danh sách các thiết kế
+    @GetMapping("/user-designs")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'GET')")
+    public ResponseEntity<List<UserDesign>> getAllUserDesigns() {
+        logger.debug("Fetching all user designs for admin");
+        List<UserDesign> designs = userDesignService.layTatCa();
+        return ResponseEntity.ok(designs);
     }
 
-    // @GetMapping("/designs/{id}")
-    // @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'GET')")
-    // public ResponseEntity<UserDesign> getDesignById(@PathVariable Integer id) {
-    //     UserDesign design = userDesignRepository.findById(id)
-    //             .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
-    //     return ResponseEntity.ok(design);
-    // }
+    // Xem chi tiết thiết kế và thông tin liên hệ người dùng
+    @GetMapping("/user-designs/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'GET')")
+    public ResponseEntity<Map<String, Object>> getUserDesignDetails(@PathVariable Long id) {
+        logger.debug("Fetching details for user design with id: {}", id);
+        UserDesign userDesign = userDesignService.layTheoId(id);
+        if (userDesign == null) {
+            logger.warn("User design with id {} not found", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
 
-    
+        Map<String, Object> response = new HashMap<>();
+        response.put("design", userDesign);
 
-    // @PutMapping("/designs/{id}/feedback")
-    // @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/designs/**', 'PUT')")
-    // public ResponseEntity<UserDesign> sendFeedback(
-    //         @PathVariable Integer id,
-    //         @RequestBody FeedbackRequest request) {
-    //     UserDesign design = userDesignRepository.findById(id)
-    //             .orElseThrow(() -> new IllegalArgumentException("Design not found with id: " + id));
+        // Lấy thông tin liên hệ của người dùng
+        Map<String, String> userInfo = userService.getUserContactInfo(userDesign.getUserId());
+        response.put("userContactInfo", userInfo);
 
-    //     design.setUpdatedAt(LocalDateTime.now());
-    //     userDesignRepository.save(design);
-    //     return ResponseEntity.ok(design);
-    // }
+        return ResponseEntity.ok(response);
+    }
+
+    // Cập nhật trạng thái xử lý thiết kế
+    @PutMapping("/user-designs/{id}/status")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'PUT')")
+    public ResponseEntity<UserDesign> updateDesignStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        logger.debug("Updating status for user design with id: {} to {}", id, status);
+        UserDesign userDesign = userDesignService.layTheoId(id);
+        if (userDesign == null) {
+            logger.warn("User design with id {} not found", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        userDesign.setStatus(status);
+        UserDesign updatedDesign = userDesignService.capNhat(userDesign);
+        return ResponseEntity.ok(updatedDesign);
+    }
+
+    // Gửi yêu cầu liên hệ (inquiry) tới người dùng sau khi xem thiết kế
+    @PostMapping("/user-designs/{id}/contact")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'POST')")
+    public ResponseEntity<Inquiry> sendInquiryToUser(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> requestBody) {
+        logger.debug("Sending inquiry for user design with id: {}", id);
+        UserDesign userDesign = userDesignService.layTheoId(id);
+        if (userDesign == null) {
+            logger.warn("User design with id {} not found", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        // Lấy thông tin liên hệ người dùng
+        Map<String, String> userInfo = userService.getUserContactInfo(userDesign.getUserId());
+        if (userInfo == null || userInfo.isEmpty()) {
+            logger.warn("User contact info not found for userId: {}", userDesign.getUserId());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        // Tạo InquiryRequest và điền thông tin người dùng
+        InquiryRequest inquiryRequest = new InquiryRequest();
+        inquiryRequest.setName(userInfo.get("fullName"));
+        inquiryRequest.setEmail(userInfo.get("email"));
+        inquiryRequest.setPhone(userInfo.get("phoneNumber"));
+        inquiryRequest.setAddress("N/A"); // Có thể mở rộng nếu cần lấy địa chỉ
+        inquiryRequest.setMessage(requestBody.getOrDefault("message", "Admin has reviewed your design and would like to contact you."));
+        inquiryRequest.setProductIds(id.toString()); // Liên kết với user design
+
+        // Gửi inquiry
+        Inquiry inquiry = inquiryService.createInquiry(inquiryRequest);
+        logger.info("Inquiry created for user design id: {}", id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(inquiry);
+    }
 
     // Quản lý người dùng
     @GetMapping("/users")
@@ -96,9 +159,7 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort) {
         int adjustedPage = page - 1;
-        if (adjustedPage < 0) {
-            adjustedPage = 0;
-        }
+        if (adjustedPage < 0) adjustedPage = 0;
         String[] sortParams = sort.split(",");
         Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
         Pageable pageable = PageRequest.of(adjustedPage, size, Sort.by(direction, sortParams[0]));
@@ -140,9 +201,7 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort) {
         int adjustedPage = page - 1;
-        if (adjustedPage < 0) {
-            adjustedPage = 0;
-        }
+        if (adjustedPage < 0) adjustedPage = 0;
         String[] sortParams = sort.split(",");
         Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
         Pageable pageable = PageRequest.of(adjustedPage, size, Sort.by(direction, sortParams[0]));
@@ -187,12 +246,13 @@ public class AdminController {
         UserResponse updatedUser = userService.removeAdminRole(id);
         return ResponseEntity.ok(updatedUser);
     }
-    
+
     @GetMapping("/category/search")
     public ResponseEntity<List<Category>> searchCategory(@RequestParam String name) {
         List<Category> categories = categoryService.searchCategory(name);
         return new ResponseEntity<>(categories, HttpStatus.OK);
     }
+
     @PostMapping("/category/create")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/category/**', 'POST')")
     public ResponseEntity<Category> createCategory(@RequestBody Category category) {
@@ -218,13 +278,12 @@ public class AdminController {
             return ResponseEntity.status(404).body("Không tìm thấy danh mục");
         }
     }
-    // danh sách đánh giá
+
     @GetMapping("/contact/list")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/contact/**', 'GET')")
     public ResponseEntity<Map<String, Object>> getAllContact(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "9") int size) {
-
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<Contact> contactPage = contactService.getAllContacts(pageable);
 
@@ -237,7 +296,7 @@ public class AdminController {
         response.put("last", contactPage.isLast());
         return ResponseEntity.ok(response);
     }
-  
+
     @PostMapping(value = "/product/create", consumes = {"multipart/form-data"})
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/create', 'POST')")
     public ResponseEntity<ProductResponse> createProduct(
@@ -268,6 +327,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
+
     @DeleteMapping("/product/delete/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/delete/{id}', 'DELETE')")
     public ResponseEntity<String> deleteProduct(@PathVariable int id) {
@@ -278,12 +338,11 @@ public class AdminController {
             return ResponseEntity.status(404).body("Không tìm thấy sản phẩm");
         }
     }
-    // hiển thị
+
     @GetMapping("/site-setting/list")
     public ResponseEntity<Map<String, Object>> getListSiteSetting(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "9") int size) {
-
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<SiteSetting> siteSettingPage = siteSettingService.getAllSiteSettings(pageable);
 
@@ -297,17 +356,17 @@ public class AdminController {
 
         return ResponseEntity.ok(response);
     }
+
     @PutMapping("/site-setting/edit/{key}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/site-setting/**', 'PUT')")
     public SiteSetting updateSiteSetting(@PathVariable int key, @RequestBody SiteSetting siteSetting) {
         return siteSettingService.updateSiteSetting(key, siteSetting);
     }
-    // hiển thị danh sách article
+
     @GetMapping("/article/list")
     public ResponseEntity<Map<String, Object>> getListArticle(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "9") int size) {
-
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<Article> articlePage = articleService.getAllArticles(pageable);
 
@@ -329,8 +388,8 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    // thêm
-   @PostMapping(value = "/article/create", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/article/create", consumes = {"multipart/form-data"})
+     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article/**', 'POST')")
     public ResponseEntity<Article> createArticle(
             @RequestPart("article") String articleJson,
             @RequestPart(value = "image", required = false) MultipartFile imageFile) {
@@ -348,6 +407,7 @@ public class AdminController {
     }
 
     @PutMapping(value = "/article/edit/{id}", consumes = {"multipart/form-data"})
+     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article/**', 'PUT')")
     public ResponseEntity<Article> updateArticle(
             @PathVariable int id,
             @RequestPart("article") String articleJson,
@@ -364,8 +424,9 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
-    // xóa
+
     @DeleteMapping("/article/delete/{id}")
+     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article/**', 'DELETE')") 
     public ResponseEntity<String> delete(@PathVariable int id) {
         try {
             articleService.deleteArticle(id);
@@ -374,12 +435,11 @@ public class AdminController {
             return ResponseEntity.status(404).body("Không tìm thấy nội dung cần xóa");
         }
     }
-    // hiển thị danh sách
+
     @GetMapping("/material/list")
     public ResponseEntity<Map<String, Object>> getAllMaterials(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "9") int size) {
-
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<Material> materialPage = materialService.getAllMaterials(pageable);
 
@@ -393,8 +453,9 @@ public class AdminController {
 
         return ResponseEntity.ok(response);
     }
-    // thêm
+
     @PostMapping("/material/create")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/material/**', 'POST')")
     public ResponseEntity<?> createMaterial(@RequestBody Material material) {
         try {
             Material saved = materialService.createMaterial(material);
@@ -403,8 +464,9 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
         }
     }
-    // sửa
+
     @PutMapping("/material/edit/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/material/**', 'PUT')")
     public ResponseEntity<?> updateMaterial(@PathVariable int id, @RequestBody Material updatedMaterial) {
         try {
             Material updated = materialService.updateMaterial(id, updatedMaterial);
@@ -413,8 +475,9 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy vật liệu");
         }
     }
-    // xóa
+
     @DeleteMapping("/material/delete/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/material/**', 'DELETE')")
     public ResponseEntity<?> deleteMaterial(@PathVariable int id) {
         try {
             materialService.deleteMaterial(id);
@@ -424,26 +487,26 @@ public class AdminController {
         }
     }
 
-    // tìm kiếm theo tên
     @GetMapping("/material/search")
     public ResponseEntity<List<Material>> searchMaterials(@RequestParam String name) {
         return ResponseEntity.ok(materialService.searchMaterialsByName(name));
     }
-    // danh sách liên hệ
+
     @GetMapping("/inquiry/list")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/inquiry/**', 'GET')")
     public ResponseEntity<Map<String, Object>> getAllInquiries(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "9") int size) {
-            Pageable pageable = PageRequest.of(page - 1, size);
-            Page<Inquiry> inquiryPage = inquiryService.getAllInquiries(pageable);
-            Map<String, Object> response = new HashMap<>();
-            response.put("content", inquiryPage.getContent());
-            response.put("pageNumber", inquiryPage.getNumber() + 1);
-            response.put("pageSize", inquiryPage.getSize());
-            response.put("totalPages", inquiryPage.getTotalPages());
-            response.put("totalElements", inquiryPage.getTotalElements());
-            response.put("last", inquiryPage.isLast());
-            return ResponseEntity.ok(response);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Inquiry> inquiryPage = inquiryService.getAllInquiries(pageable);
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", inquiryPage.getContent());
+        response.put("pageNumber", inquiryPage.getNumber() + 1);
+        response.put("pageSize", inquiryPage.getSize());
+        response.put("totalPages", inquiryPage.getTotalPages());
+        response.put("totalElements", inquiryPage.getTotalElements());
+        response.put("last", inquiryPage.isLast());
+        return ResponseEntity.ok(response);
     }
 }
 

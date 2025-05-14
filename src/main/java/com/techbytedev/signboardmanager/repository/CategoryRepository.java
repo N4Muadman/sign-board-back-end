@@ -16,4 +16,5 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     long countByParentCategoryId(int parentCategoryId);
     List<Category> findByNameContainingIgnoreCase(String name);
     Page<Category> findAll(Pageable pageable);
+    List<Category> findByParentCategoryId(int parentCategoryId);
 }
