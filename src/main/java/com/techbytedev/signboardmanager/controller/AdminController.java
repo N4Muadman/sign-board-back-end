@@ -152,40 +152,7 @@ public ResponseEntity<String> deleteUserDesign(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi xóa thiết kế");
     }
 }
-//    // Gửi yêu cầu liên hệ (inquiry) tới người dùng sau khi xem thiết kế
-//    @PostMapping("/user-designs/{id}/contact")
-//    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'POST')")
-//    public ResponseEntity<Inquiry> sendInquiryToUser(
-//            @PathVariable Long id,
-//            @RequestBody Map<String, String> requestBody) {
-//        logger.debug("Sending inquiry for user design with id: {}", id);
-//        UserDesign userDesign = userDesignService.layTheoId(id);
-//        if (userDesign == null) {
-//            logger.warn("User design with id {} not found", id);
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-//        }
-//
-//        // Lấy thông tin liên hệ người dùng
-//        Map<String, String> userInfo = userService.getUserContactInfo(userDesign.getUserId());
-//        if (userInfo == null || userInfo.isEmpty()) {
-//            logger.warn("User contact info not found for userId: {}", userDesign.getUserId());
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-//        }
-//
-//        // Tạo InquiryRequest và điền thông tin người dùng
-//        InquiryRequest inquiryRequest = new InquiryRequest();
-//        inquiryRequest.setName(userInfo.get("fullName"));
-//        inquiryRequest.setEmail(userInfo.get("email"));
-//        inquiryRequest.setPhone(userInfo.get("phoneNumber"));
-//        inquiryRequest.setAddress("N/A"); // Có thể mở rộng nếu cần lấy địa chỉ
-//        inquiryRequest.setMessage(requestBody.getOrDefault("message", "Admin has reviewed your design and would like to contact you."));
-//        inquiryRequest.setProductIds(id.toString()); // Liên kết với user design
-//
-//        // Gửi inquiry
-//        Inquiry inquiry = inquiryService.createInquiry(inquiryRequest);
-//        logger.info("Inquiry created for user design id: {}", id);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(inquiry);
-//    }
+
 
     // Quản lý người dùng
     @GetMapping("/users")
