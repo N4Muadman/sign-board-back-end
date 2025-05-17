@@ -1,5 +1,6 @@
 package com.techbytedev.signboardmanager.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,7 +17,7 @@ import java.util.List;
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "category_id")
+    @Column(name = "id")
     private int id;
 
     @Column(name = "name", nullable = false)
@@ -32,7 +33,7 @@ public class Category {
     private String imageURL;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "parent_category_id", referencedColumnName = "category_id", nullable = true)
+    @JoinColumn(name = "parent_category_id", referencedColumnName = "id", nullable = true)
     @JsonBackReference
     private Category parentCategory;
 
@@ -44,14 +45,13 @@ public class Category {
     private int sortOrder = 0;
 
     @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
+    @JsonIgnore
     private List<Product> products;
 
     public Category getParentCategory() {

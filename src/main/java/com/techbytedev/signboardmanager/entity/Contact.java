@@ -1,6 +1,5 @@
 package com.techbytedev.signboardmanager.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -33,15 +32,12 @@ public class Contact {
     private String message;
 
     @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime deletedAt;
 
     public int getId() {
