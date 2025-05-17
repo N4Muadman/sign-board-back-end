@@ -1,6 +1,7 @@
 package com.techbytedev.signboardmanager.controller;
 
 import com.techbytedev.signboardmanager.dto.request.InquiryRequest;
+import com.techbytedev.signboardmanager.dto.response.InquiryResponse;
 import com.techbytedev.signboardmanager.entity.Inquiry;
 import com.techbytedev.signboardmanager.service.InquiryService;
 import org.springframework.http.HttpStatus;
@@ -18,12 +19,13 @@ public class InquiryController {
 
     // thêm liên hệ
     @PostMapping("/create")
-    public ResponseEntity<Inquiry> createInquiry(@RequestBody InquiryRequest request) {
+    public ResponseEntity<InquiryResponse> createInquiry(@RequestBody InquiryRequest request) {
         try {
-            Inquiry inquiry = inquiryService.createInquiry(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(inquiry);
+            InquiryResponse response = inquiryService.createInquiry(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
+
 }

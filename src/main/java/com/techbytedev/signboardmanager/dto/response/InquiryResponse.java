@@ -1,56 +1,26 @@
-package com.techbytedev.signboardmanager.entity;
+package com.techbytedev.signboardmanager.dto.response;
 
-import jakarta.persistence.*;
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "inquiries")
-public class Inquiry {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "inquiry_id")
-    private Integer inquiryId;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
-
-    @Column(name = "name")
+@Data
+public class InquiryResponse {
+    private Integer id;
     private String name;
-
-    @Column(name = "phone")
     private String phone;
-
-    @Column(name = "email")
     private String email;
-
-    @Column(name = "address")
     private String address;
-
-    @Column(name = "message", columnDefinition = "TEXT")
     private String message;
-
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
-
-    @Column(name = "created_at", updatable = false)
+    private String productName;
     private LocalDateTime createdAt;
 
-    public Integer getInquiryId() {
-        return inquiryId;
+    public Integer getId() {
+        return id;
     }
 
-    public void setInquiryId(Integer inquiryId) {
-        this.inquiryId = inquiryId;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -93,12 +63,12 @@ public class Inquiry {
         this.message = message;
     }
 
-    public Product getProduct() {
-        return product;
+    public String getProductName() {
+        return productName;
     }
 
-    public void setProduct(Product product) {
-        this.product = product;
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -9,7 +9,7 @@ public class InquiryRequest {
     private String email;
     private String address;
     private String message;
-    private String productIds;
+    private Integer productId;
 
     public String getName() {
         return name;
@@ -51,11 +51,11 @@ public class InquiryRequest {
         this.message = message;
     }
 
-    public String getProductIds() {
-        return productIds;
+    public Integer getProductId() {
+        return productId;
     }
 
-    public void setProductIds(String productIds) {
-        this.productIds = productIds;
+    public void setProductId(Integer productId) {
+        this.productId = productId;
     }
 }
