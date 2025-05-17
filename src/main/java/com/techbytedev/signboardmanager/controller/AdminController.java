@@ -136,6 +136,24 @@ public class AdminController {
         return ResponseEntity.ok(updatedDesign);
     }
 
+    @DeleteMapping("/user-designs/{id}")
+@PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'DELETE')")
+public ResponseEntity<String> deleteUserDesign(@PathVariable Long id) {
+    logger.debug("Attempting to delete user design with id: {}", id);
+    try {
+        UserDesign userDesign = userDesignService.layTheoId(id);
+        if (userDesign == null) {
+            logger.warn("User design with id {} not found", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy thiết kế");
+        }
+        userDesignService.xoa(id);
+        logger.info("User design with id {} deleted successfully", id);
+        return ResponseEntity.ok("Xóa thiết kế thành công");
+    } catch (Exception e) {
+        logger.error("Error deleting user design with id {}: {}", id, e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi xóa thiết kế");
+    }
+}
     // Gửi yêu cầu liên hệ (inquiry) tới người dùng sau khi xem thiết kế
     @PostMapping("/user-designs/{id}/contact")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'POST')")
