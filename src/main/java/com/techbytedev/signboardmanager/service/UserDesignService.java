@@ -47,11 +47,10 @@ public class UserDesignService {
         return userDesignRepository.save(existingDesign);
     }
 
-    public boolean xoa(Long id) {
+   public boolean xoa(Long id) {
         UserDesign userDesign = layTheoId(id);
         if (userDesign == null) return false;
-        userDesign.setDeletedAt(LocalDateTime.now());
-        userDesignRepository.save(userDesign);
+        userDesignRepository.delete(userDesign);
         return true;
     }
 
