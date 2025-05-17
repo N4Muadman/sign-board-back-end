@@ -37,7 +37,7 @@ public class PermissionInterceptorConfiguration implements WebMvcConfigurer {
            " /api/user-designs/**" ,
             "/api/products/**",
             "/api/contacts/**",
-           " /api/inquiries/**",
+           "/api/inquiries/**",
             "/**.hot-update.json",
             "/**.hot-update.js","/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"
         };

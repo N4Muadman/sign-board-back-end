@@ -85,4 +85,7 @@ public class UserDesignService {
         com.techbytedev.signboardmanager.entity.User user = userService.findByUsername(username);
         return user != null ? user.getId() != null ? user.getId().longValue() : null : null;
     }
+
+
+    
 }
