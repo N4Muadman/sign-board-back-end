@@ -68,6 +68,26 @@ public class InquiryService {
 
         return response;
     }
+    public InquiryResponse convertToResponse(Inquiry inquiry) {
+        InquiryResponse response = new InquiryResponse();
+        response.setId(inquiry.getInquiryId());
+        response.setName(inquiry.getName());
+        response.setPhone(inquiry.getPhone());
+        response.setEmail(inquiry.getEmail());
+        response.setAddress(inquiry.getAddress());
+        response.setMessage(inquiry.getMessage());
+        response.setCreatedAt(inquiry.getCreatedAt());
+        response.setProductName(inquiry.getProduct() != null ? inquiry.getProduct().getName() : null);
+        response.setStatus(inquiry.getStatus());
+        return response;
+    }
+
+    public void updateInquiryStatus(Integer id, String status) {
+        Inquiry inquiry = inquiryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy inquiry"));
+        inquiry.setStatus(status);
+        inquiryRepository.save(inquiry);
+    }
 
     public Page<Inquiry> getAllInquiries(Pageable pageable) {
         return inquiryRepository.findAll(pageable);
