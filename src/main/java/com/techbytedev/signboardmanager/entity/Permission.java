@@ -4,9 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Entity
@@ -36,9 +39,16 @@ public class Permission {
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
+    @Fetch(FetchMode.SUBSELECT)
+    @BatchSize(size = 50)
     @JsonIgnore
     @ToString.Exclude
-    private Set<Role> roles = new HashSet<>(); // Khởi tạo để tránh NullPointerException
+    private Set<Role> roles = new LinkedHashSet<>();
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     @Override
     public String toString() {

@@ -14,12 +14,12 @@ public class RolePermission {
     private Long id;
 
     @Column(name = "role_id", nullable = false)
-    private Long roleId;
+    private Integer roleId; // Đổi sang Integer để khớp với Role.id
 
     @Column(name = "permission_id", nullable = false)
     private Long permissionId;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)

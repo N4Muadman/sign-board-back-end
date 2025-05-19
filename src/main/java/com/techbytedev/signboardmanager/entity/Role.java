@@ -1,13 +1,15 @@
 package com.techbytedev.signboardmanager.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Entity
@@ -39,14 +41,21 @@ public class Role {
         joinColumns = @JoinColumn(name = "role_id"),
         inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
+    @Fetch(FetchMode.SUBSELECT)
+    @BatchSize(size = 50)
     @JsonIgnore
     @ToString.Exclude
-    private Set<Permission> permissions = new HashSet<>(); // Khởi tạo để tránh NullPointerException
+    private Set<Permission> permissions = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
-    @JsonBackReference
+    @JsonIgnore
     @ToString.Exclude
-    private Set<User> users;
+    private Set<User> users = new LinkedHashSet<>();
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     @Override
     public String toString() {

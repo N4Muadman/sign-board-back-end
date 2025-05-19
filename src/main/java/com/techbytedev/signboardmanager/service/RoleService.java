@@ -2,102 +2,135 @@ package com.techbytedev.signboardmanager.service;
 
 import com.techbytedev.signboardmanager.dto.request.RoleCreateDTO;
 import com.techbytedev.signboardmanager.dto.request.RoleUpdateDTO;
-import com.techbytedev.signboardmanager.dto.response.ResultPaginationDTO;
+import com.techbytedev.signboardmanager.dto.response.PermissionResponseDTO;
 import com.techbytedev.signboardmanager.dto.response.RoleResponseDTO;
+import com.techbytedev.signboardmanager.entity.Permission;
 import com.techbytedev.signboardmanager.entity.Role;
 import com.techbytedev.signboardmanager.repository.RoleRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class RoleService {
 
-    private final RoleRepository roleRepository;
+    private static final Logger log = LoggerFactory.getLogger(RoleService.class);
 
-    public RoleService(RoleRepository roleRepository) {
-        this.roleRepository = roleRepository;
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private PermissionService permissionService;
+
+    @Transactional(readOnly = true)
+    public List<RoleResponseDTO> fetchAllRolesWithPermissions() {
+        try {
+            List<Role> roles = roleRepository.findAllWithPermissions();
+            log.info("Lấy được {} vai trò", roles.size());
+            return roles.stream()
+                    .map(this::convertToRoleResponseDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy danh sách vai trò: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể lấy danh sách vai trò: " + e.getMessage(), e);
+        }
     }
 
     @Transactional(readOnly = true)
-    public ResultPaginationDTO fetchAll(Specification<Role> spec, Pageable pageable) {
-        Page<Role> page = roleRepository.findAll(spec, pageable);
-        return convertToResultPaginationDTO(page);
+    public RoleResponseDTO fetchById(Integer id) {
+        try {
+            Role role = roleRepository.findByIdWithPermissions(id)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò với id: " + id));
+            log.info("Lấy được vai trò với id: {}", id);
+            return convertToRoleResponseDTO(role);
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy vai trò với id {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Không thể lấy vai trò với id: " + id + ", lỗi: " + e.getMessage(), e);
+        }
     }
 
     @Transactional
     public RoleResponseDTO create(RoleCreateDTO request) {
-        if (roleRepository.existsByName(request.getName())) {
-            throw new IllegalArgumentException("Role name already exists: " + request.getName());
+        try {
+            Role role = new Role();
+            role.setName(request.getName());
+            role.setDescription(request.getDescription());
+            role.setActive(true);
+            role = roleRepository.save(role);
+            log.info("Tạo vai trò: {}", role.getName());
+            return convertToRoleResponseDTO(role);
+        } catch (Exception e) {
+            log.error("Lỗi khi tạo vai trò {}: {}", request.getName(), e.getMessage(), e);
+            throw new RuntimeException("Không thể tạo vai trò: " + e.getMessage(), e);
         }
-
-        Role role = new Role();
-        role.setName(request.getName());
-        role.setDescription(request.getDescription());
-        role.setActive(request.getActive() != null ? request.getActive() : true);
-        role.setCreatedAt(LocalDateTime.now());
-        role.setUpdatedAt(LocalDateTime.now());
-
-        Role savedRole = roleRepository.save(role);
-        return convertToRoleResponseDTO(savedRole);
     }
-@Transactional(readOnly = true)
-    public RoleResponseDTO fetchById(Integer id) {
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Role not found with id: " + id));
-        return convertToRoleResponseDTO(role);
-    }
+
     @Transactional
     public RoleResponseDTO update(Integer id, RoleUpdateDTO request) {
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Role not found with id: " + id));
-
-        if (request.getName() != null && !request.getName().equals(role.getName()) && roleRepository.existsByName(request.getName())) {
-            throw new IllegalArgumentException("Role name already exists: " + request.getName());
+        try {
+            Role role = roleRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò với id: " + id));
+            role.setName(request.getName());
+            role.setDescription(request.getDescription());
+            role.setActive(request.getActive());
+            role = roleRepository.save(role);
+            log.info("Cập nhật vai trò với id: {}", id);
+            return convertToRoleResponseDTO(role);
+        } catch (Exception e) {
+            log.error("Lỗi khi cập nhật vai trò với id {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Không thể cập nhật vai trò: " + e.getMessage(), e);
         }
-
-        role.setName(request.getName() != null ? request.getName() : role.getName());
-        role.setDescription(request.getDescription() != null ? request.getDescription() : role.getDescription());
-        role.setActive(request.getActive() != null ? request.getActive() : role.getActive());
-        role.setUpdatedAt(LocalDateTime.now());
-
-        Role updatedRole = roleRepository.save(role);
-        return convertToRoleResponseDTO(updatedRole);
     }
 
     @Transactional
     public void delete(Integer id) {
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Role not found with id: " + id));
-        roleRepository.delete(role);
+        try {
+            Role role = roleRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò với id: " + id));
+            roleRepository.delete(role);
+            log.info("Xóa vai trò với id: {}", id);
+        } catch (Exception e) {
+            log.error("Lỗi khi xóa vai trò với id {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Không thể xóa vai trò: " + e.getMessage(), e);
+        }
     }
 
-    private ResultPaginationDTO convertToResultPaginationDTO(Page<Role> page) {
-        ResultPaginationDTO result = new ResultPaginationDTO();
-        result.setContent(page.getContent().stream()
-                .map(this::convertToRoleResponseDTO)
-                .collect(Collectors.toList()));
-        result.setPage(page.getNumber());
-        result.setSize(page.getSize());
-        result.setTotalElements(page.getTotalElements());
-        result.setTotalPages(page.getTotalPages());
-        return result;
-    }
-
-    @Transactional(readOnly = true)
     private RoleResponseDTO convertToRoleResponseDTO(Role role) {
-        RoleResponseDTO response = new RoleResponseDTO();
-        response.setId(role.getId());
-        response.setName(role.getName());
-        response.setDescription(role.getDescription());
-        response.setActive(role.getActive());
-        response.setCreatedAt(role.getCreatedAt());
-        response.setUpdatedAt(role.getUpdatedAt());
-        return response;
+        try {
+            RoleResponseDTO dto = new RoleResponseDTO();
+            dto.setId(role.getId());
+            dto.setName(role.getName());
+            dto.setDescription(role.getDescription());
+            dto.setActive(role.getActive());
+            // Lấy permissions từ PermissionService thay vì role.getPermissions()
+            List<Permission> permissions = permissionService.findByRoleId(role.getId());
+            dto.setPermissions(permissions.stream()
+                    .map(this::convertToPermissionResponseDTO)
+                    .collect(Collectors.toSet()));
+            return dto;
+        } catch (Exception e) {
+            log.error("Lỗi khi chuyển đổi Role sang DTO: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể chuyển đổi Role sang DTO: " + e.getMessage(), e);
+        }
+    }
+
+    private PermissionResponseDTO convertToPermissionResponseDTO(Permission permission) {
+        try {
+            PermissionResponseDTO dto = new PermissionResponseDTO();
+            dto.setId(permission.getId());
+            dto.setName(permission.getName());
+            dto.setApiPath(permission.getApiPath());
+            dto.setMethod(permission.getMethod());
+            dto.setModule(permission.getModule());
+            return dto;
+        } catch (Exception e) {
+            log.error("Lỗi khi chuyển đổi Permission sang DTO: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể chuyển đổi Permission sang DTO: " + e.getMessage(), e);
+        }
     }
 }

@@ -115,4 +115,14 @@ public class PermissionService {
             throw new IllegalStateException("Không có quyền nào được gỡ khỏi vai trò này");
         }
     }
+
+    @Transactional(readOnly = true)
+    public List<Permission> findByRoleId(Integer roleId) {
+        Query query = entityManager.createNativeQuery(
+                "SELECT p.* FROM permissions p " +
+                "JOIN role_permissions rp ON p.id = rp.permission_id " +
+                "WHERE rp.role_id = :roleId", Permission.class);
+        query.setParameter("roleId", roleId);
+        return query.getResultList();
+    }
 }
