@@ -37,6 +37,16 @@ public class Inquiry {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    private String status;
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     public Integer getInquiryId() {
         return inquiryId;
     }

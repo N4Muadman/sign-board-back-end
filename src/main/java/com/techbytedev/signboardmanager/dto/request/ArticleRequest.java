@@ -1,11 +1,13 @@
 package com.techbytedev.signboardmanager.dto.request;
 
+import jakarta.persistence.Column;
 import lombok.Data;
 
 @Data
 public class ArticleRequest {
     private String title;
     private String slug;
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String content;
     private String excerpt;
     private boolean isFeatured;

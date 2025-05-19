@@ -6,10 +6,7 @@ import com.techbytedev.signboardmanager.dto.request.InquiryRequest;
 import com.techbytedev.signboardmanager.dto.request.ProductRequest;
 import com.techbytedev.signboardmanager.dto.request.UserCreateRequest;
 import com.techbytedev.signboardmanager.dto.request.UserUpdateRequest;
-import com.techbytedev.signboardmanager.dto.response.CustomPageResponse;
-import com.techbytedev.signboardmanager.dto.response.ProductResponse;
-import com.techbytedev.signboardmanager.dto.response.UserDesignResponseDTO;
-import com.techbytedev.signboardmanager.dto.response.UserResponse;
+import com.techbytedev.signboardmanager.dto.response.*;
 import com.techbytedev.signboardmanager.entity.*;
 import com.techbytedev.signboardmanager.repository.UserDesignRepository;
 import com.techbytedev.signboardmanager.service.*;
@@ -32,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -154,7 +152,7 @@ public ResponseEntity<String> deleteUserDesign(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi xóa thiết kế");
     }
 }
-    
+
 
     // Quản lý người dùng
     @GetMapping("/users")
@@ -502,16 +500,30 @@ public ResponseEntity<String> deleteUserDesign(@PathVariable Long id) {
     public ResponseEntity<Map<String, Object>> getAllInquiries(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "9") int size) {
+
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<Inquiry> inquiryPage = inquiryService.getAllInquiries(pageable);
+
+        List<InquiryResponse> responseList = inquiryPage.getContent()
+                .stream()
+                .map(inquiryService::convertToResponse)
+                .collect(Collectors.toList());
+
         Map<String, Object> response = new HashMap<>();
-        response.put("content", inquiryPage.getContent());
+        response.put("content", responseList);
         response.put("pageNumber", inquiryPage.getNumber() + 1);
         response.put("pageSize", inquiryPage.getSize());
         response.put("totalPages", inquiryPage.getTotalPages());
         response.put("totalElements", inquiryPage.getTotalElements());
         response.put("last", inquiryPage.isLast());
+
         return ResponseEntity.ok(response);
+    }
+    @PutMapping("/inquiry/{id}/status")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/inquiry/**', 'PUT')")
+    public ResponseEntity<?> updateStatus(@PathVariable Integer id, @RequestParam String status) {
+        inquiryService.updateInquiryStatus(id, status);
+        return ResponseEntity.ok("Cập nhật trạng thái thành công.");
     }
 }
 

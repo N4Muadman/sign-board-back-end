@@ -21,7 +21,7 @@ public class Article {
     @Column(name = "slug", unique = true, nullable = false)
     private String slug;
 
-    @Column(name = "content", nullable = false)
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String content;
 
     @Column(name = "excerpt")
