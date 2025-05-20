@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,15 +49,14 @@ private final EmailService emailService; // Add EmailService
         logger.info("UserDesignController initialized");
     }
 
-    // Tạo thiết kế mới
-    @PostMapping("/{id}")
+   @PostMapping("/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/user-designs/**', 'POST')")
     public ResponseEntity<UserDesign> taoThietKeNguoiDung(
             @PathVariable("id") Long userId,
             @RequestParam(value = "designImage", required = false) MultipartFile designImage,
             @RequestParam(value = "designLink", required = false) String designLink,
             @RequestParam(value = "desc", required = false) String desc
-            ) throws IOException, MessagingException {
+            ) throws IOException {
         logger.debug("Creating user design for userId: {}", userId);
 
         UserDesign userDesign = new UserDesign();
@@ -70,33 +71,51 @@ private final EmailService emailService; // Add EmailService
             userDesign.setDesignLink(designLink);
         }
 
-        // Save the design
         UserDesign savedDesign = userDesignService.tao(userDesign);
 
-        // Fetch user info for email content
+        // Lấy thông tin người dùng
         Map<String, String> userContactInfo = userService.getUserContactInfo(userId);
         String userFullName = userContactInfo.get("fullName");
         String userEmail = userContactInfo.get("email");
+        String userPhoneNumber = userContactInfo.get("phoneNumber");
 
-        // Fetch all admins
-        Page<UserResponse> adminUsers = userService.searchUsers(null, null, "Admin", true, PageRequest.of(0, Integer.MAX_VALUE));
+        // Tìm tất cả admin
+        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
+        Page<UserResponse> adminUsers = userService.searchUsers(null, null, "Admin", true, pageable);
         List<String> adminEmails = adminUsers.getContent().stream()
                 .map(UserResponse::getEmail)
                 .filter(email -> email != null && !email.equals("N/A"))
                 .collect(Collectors.toList());
 
-        // Send email to each admin
+        // Định dạng thời gian gửi
+        String submissionTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
+
+        // Gửi email đến từng admin với thông tin chi tiết
         for (String adminEmail : adminEmails) {
             String emailContent = String.format(
-                "A new design has been submitted by %s (%s).<br>" +
-                "Description: %s<br>" +
-                "Design Link: %s<br>" +
-                "Design Image: %s",
-                userFullName, userEmail, desc != null ? desc : "No description provided",
-                designLink != null ? designLink : "No link provided",
-                userDesign.getDesignImage() != null ? userDesign.getDesignImage() : "No image uploaded"
+                "<h3>Thông báo: Thiết kế mới được gửi</h3>" +
+                "<p><strong>ID thiết kế:</strong> %d</p>" +
+                "<p><strong>Người gửi:</strong> %s</p>" +
+                "<p><strong>Email:</strong> %s</p>" +
+                "<p><strong>Số điện thoại:</strong> %s</p>" +
+                "<p><strong>Thời gian gửi:</strong> %s</p>" +
+                "<p><strong>Mô tả:</strong> %s</p>" +
+                "<p><strong>Link thiết kế:</strong> %s</p>" +
+                "<p>%s</p>",
+                savedDesign.getId(),
+                userFullName,
+                userEmail,
+                userPhoneNumber,
+                submissionTime,
+                desc != null ? desc : "Không có mô tả",
+                designLink != null ? designLink : "Không có link",
+                designImage != null && !designImage.isEmpty() ? "Ảnh thiết kế được đính kèm." : "Không có ảnh"
             );
-            emailService.sendVerificationCodeEmail(adminEmail, emailContent);
+            try {
+                emailService.sendEmail(adminEmail, "Thông báo thiết kế mới", emailContent, designImage);
+            } catch (MessagingException e) {
+                logger.error("Lỗi gửi email đến {}: {}", adminEmail, e.getMessage());
+            }
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(savedDesign);

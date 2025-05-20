@@ -87,6 +87,7 @@ public Page<UserResponse> getAllUsers(Pageable pageable) {
         return convertToResponse(user);
     }
 
+   @Transactional(readOnly = true)
     public Map<String, String> getUserContactInfo(Long userId) {
         Optional<User> userOptional = userRepository.findByIdAndDeletedAtIsNull(userId.intValue());
         if (userOptional.isPresent()) {
@@ -212,6 +213,7 @@ public void deleteUser(Integer id) {
         return response;
     }
 
+    @Transactional(readOnly = true)
     public Page<UserResponse> searchUsers(String username, String email, String roleName, Boolean isActive, Pageable pageable) {
         return userRepository.searchUsers(username, email, roleName, isActive, pageable)
                 .map(this::convertToResponse);
@@ -235,33 +237,32 @@ public void deleteUser(Integer id) {
     }
 
     public UserResponse convertToResponse(User user) {
-    UserResponse response = new UserResponse();
-    response.setId(user.getId());
-    response.setUsername(user.getUsername());
-    response.setEmail(user.getEmail());
-    response.setFullName(user.getFullName());
-    response.setPhoneNumber(user.getPhoneNumber());
-    response.setAddress(user.getAddress());
-    response.setActive(user.isActive());
-    response.setRoleName(user.getRole() != null ? user.getRole().getName() : null);
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setUsername(user.getUsername());
+        response.setEmail(user.getEmail());
+        response.setFullName(user.getFullName());
+        response.setPhoneNumber(user.getPhoneNumber());
+        response.setAddress(user.getAddress());
+        response.setActive(user.isActive());
+        response.setRoleName(user.getRoleName()); // Sử dụng roleName thay vì user.getRole().getName()
 
-    if (user.getRole() != null && user.getRole().getId() != null) {
-        List<Permission> permissions = permissionService.findByRoleId(user.getRole().getId());
-        Set<PermissionResponseDTO> permissionDTOs = permissions.stream()
-            .map(permission -> {
-                PermissionResponseDTO dto = new PermissionResponseDTO();
-                dto.setId(permission.getId());
-                dto.setName(permission.getName());
-                dto.setApiPath(permission.getApiPath());
-                dto.setMethod(permission.getMethod());
-                dto.setModule(permission.getModule());
-                return dto;
-            }).collect(Collectors.toSet());
+        if (user.getRole() != null && user.getRole().getId() != null) {
+            List<Permission> permissions = permissionService.findByRoleId(user.getRole().getId());
+            Set<PermissionResponseDTO> permissionDTOs = permissions.stream()
+                    .map(permission -> {
+                        PermissionResponseDTO dto = new PermissionResponseDTO();
+                        dto.setId(permission.getId());
+                        dto.setName(permission.getName());
+                        dto.setApiPath(permission.getApiPath());
+                        dto.setMethod(permission.getMethod());
+                        dto.setModule(permission.getModule());
+                        return dto;
+                    }).collect(Collectors.toSet());
+            response.setPermissions(permissionDTOs);
+        }
 
-        response.setPermissions(permissionDTOs); // 👈 Gán vào UserResponse
+        return response;
     }
-
-    return response;
-}
 
 }

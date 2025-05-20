@@ -14,18 +14,21 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("SELECT u FROM User u JOIN FETCH u.role WHERE u.username = :username AND u.deletedAt IS NULL")
     Optional<User> findByUsername(@Param("username") String username);
+
     Optional<User> findByEmail(String email);
+
     boolean existsByUsername(String username);
+
     boolean existsByEmail(String email);
-    
+
     Page<User> findAllByDeletedAtIsNull(Pageable pageable);
-    
+
     Optional<User> findByIdAndDeletedAtIsNull(Integer id);
 
-    @Query("SELECT u FROM User u WHERE u.deletedAt IS NULL " +
+    @Query("SELECT u FROM User u JOIN FETCH u.role r WHERE u.deletedAt IS NULL " +
            "AND (:username IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :username, '%'))) " +
            "AND (:email IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :email, '%'))) " +
-           "AND (:roleName IS NULL OR u.role.name = :roleName) " +
+           "AND (:roleName IS NULL OR r.name = :roleName) " +
            "AND (:isActive IS NULL OR u.isActive = :isActive)")
     Page<User> searchUsers(
             @Param("username") String username,
