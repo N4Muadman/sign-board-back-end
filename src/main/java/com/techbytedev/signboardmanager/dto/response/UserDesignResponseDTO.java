@@ -8,10 +8,12 @@ public class UserDesignResponseDTO {
     private String designerFullName;
     private String designerEmail;
     private String designerPhoneNumber;
+    private String description;
+
 
     // Constructor
     public UserDesignResponseDTO(Long designId, String designImage, String designLink, String status,
-                                 String designerFullName, String designerEmail, String designerPhoneNumber) {
+                                 String designerFullName, String designerEmail, String designerPhoneNumber,String description) {
         this.designId = designId;
         this.designImage = designImage;
         this.designLink = designLink;
@@ -19,8 +21,14 @@ public class UserDesignResponseDTO {
         this.designerFullName = designerFullName;
         this.designerEmail = designerEmail;
         this.designerPhoneNumber = designerPhoneNumber;
+        this.description = description;
     }
-
+ public  String getDescription() {
+        return description;
+    }
+    public void setDescription(String description) {
+        this.description = description;
+    }
     // Getters and Setters
     public Long getDesignId() {
         return designId;

@@ -89,6 +89,7 @@ public class UserDesignController {
                     userDesign.getDesignImage(),
                     userDesign.getDesignLink(),
                     userDesign.getStatus(),
+                    userDesign.getDescription(),
                     user != null ? user.getFullName() : "Unknown",
                     user != null ? user.getEmail() : "Unknown",
                     user != null ? user.getPhoneNumber() : "Unknown"
