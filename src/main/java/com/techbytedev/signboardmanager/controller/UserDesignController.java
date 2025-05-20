@@ -1,10 +1,16 @@
 package com.techbytedev.signboardmanager.controller;
 
 import com.techbytedev.signboardmanager.dto.response.UserDesignResponseDTO;
+import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.User;
 import com.techbytedev.signboardmanager.entity.UserDesign;
+import com.techbytedev.signboardmanager.service.EmailService;
 import com.techbytedev.signboardmanager.service.FileStorageService;
 import com.techbytedev.signboardmanager.service.UserDesignService;
+import com.techbytedev.signboardmanager.service.UserService;
+
+import jakarta.mail.MessagingException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -19,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,11 +36,14 @@ public class UserDesignController {
     private final UserDesignService userDesignService;
     private final FileStorageService fileStorageService;
     private final com.techbytedev.signboardmanager.service.UserService userService;
+private final EmailService emailService; // Add EmailService
 
-    public UserDesignController(UserDesignService userDesignService, FileStorageService fileStorageService, com.techbytedev.signboardmanager.service.UserService userService) {
+    public UserDesignController(UserDesignService userDesignService, FileStorageService fileStorageService, 
+                               UserService userService, EmailService emailService) {
         this.userDesignService = userDesignService;
         this.fileStorageService = fileStorageService;
         this.userService = userService;
+        this.emailService = emailService; // Inject EmailService
         logger.info("UserDesignController initialized");
     }
 
@@ -45,10 +55,8 @@ public class UserDesignController {
             @RequestParam(value = "designImage", required = false) MultipartFile designImage,
             @RequestParam(value = "designLink", required = false) String designLink,
             @RequestParam(value = "desc", required = false) String desc
-            ) throws IOException {
+            ) throws IOException, MessagingException {
         logger.debug("Creating user design for userId: {}", userId);
-        // Kiểm tra quyền: Chỉ người dùng sở hữu mới được tạo
-       
 
         UserDesign userDesign = new UserDesign();
         userDesign.setUserId(userId);
@@ -62,9 +70,37 @@ public class UserDesignController {
             userDesign.setDesignLink(designLink);
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(userDesignService.tao(userDesign));
-    }
+        // Save the design
+        UserDesign savedDesign = userDesignService.tao(userDesign);
 
+        // Fetch user info for email content
+        Map<String, String> userContactInfo = userService.getUserContactInfo(userId);
+        String userFullName = userContactInfo.get("fullName");
+        String userEmail = userContactInfo.get("email");
+
+        // Fetch all admins
+        Page<UserResponse> adminUsers = userService.searchUsers(null, null, "Admin", true, PageRequest.of(0, Integer.MAX_VALUE));
+        List<String> adminEmails = adminUsers.getContent().stream()
+                .map(UserResponse::getEmail)
+                .filter(email -> email != null && !email.equals("N/A"))
+                .collect(Collectors.toList());
+
+        // Send email to each admin
+        for (String adminEmail : adminEmails) {
+            String emailContent = String.format(
+                "A new design has been submitted by %s (%s).<br>" +
+                "Description: %s<br>" +
+                "Design Link: %s<br>" +
+                "Design Image: %s",
+                userFullName, userEmail, desc != null ? desc : "No description provided",
+                designLink != null ? designLink : "No link provided",
+                userDesign.getDesignImage() != null ? userDesign.getDesignImage() : "No image uploaded"
+            );
+            emailService.sendVerificationCodeEmail(adminEmail, emailContent);
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedDesign);
+    }
     // Xử lý yêu cầu không hợp lệ (thiếu userId)
     @PostMapping
     public ResponseEntity<String> handleInvalidPost() {

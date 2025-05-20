@@ -78,7 +78,7 @@ public class InquiryService {
         response.setMessage(inquiry.getMessage());
         response.setCreatedAt(inquiry.getCreatedAt());
         response.setProductName(inquiry.getProduct() != null ? inquiry.getProduct().getName() : null);
-        response.setStatus(inquiry.getStatus());
+        response.setStatus(inquiry.getStatus() != null ? inquiry.getStatus() : "NOCONTACT");
         return response;
     }
 

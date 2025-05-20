@@ -37,6 +37,7 @@ public class Inquiry {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "status")
     private String status;
 
     public String getStatus() {
