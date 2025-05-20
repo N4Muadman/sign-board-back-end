@@ -45,12 +45,13 @@ public class UserService {
         this.permissionService = permissionService;
     }
 
-    public Page<UserResponse> getAllUsers(Pageable pageable) {
-        logger.debug("Fetching users with pageable: {}", pageable);
-        Page<User> users = userRepository.findAllByDeletedAtIsNull(pageable);
-        logger.debug("Found {} users", users.getTotalElements());
-        return users.map(this::convertToResponse);
-    }
+    @Transactional(readOnly = true)
+public Page<UserResponse> getAllUsers(Pageable pageable) {
+    logger.debug("Fetching users with pageable: {}", pageable);
+    Page<User> users = userRepository.findAllByDeletedAtIsNull(pageable);
+    logger.debug("Found {} users", users.getTotalElements());
+    return users.map(this::convertToResponse);
+}
 
     public UserResponse getUserById(Integer id) {
         User user = userRepository.findByIdAndDeletedAtIsNull(id)
