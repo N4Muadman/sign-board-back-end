@@ -43,7 +43,8 @@ public class UserDesignController {
     public ResponseEntity<UserDesign> taoThietKeNguoiDung(
             @PathVariable("id") Long userId,
             @RequestParam(value = "designImage", required = false) MultipartFile designImage,
-            @RequestParam(value = "designLink", required = false) String designLink
+            @RequestParam(value = "designLink", required = false) String designLink,
+            @RequestParam(value = "desc", required = false) String desc
             ) throws IOException {
         logger.debug("Creating user design for userId: {}", userId);
         // Kiểm tra quyền: Chỉ người dùng sở hữu mới được tạo
@@ -51,6 +52,7 @@ public class UserDesignController {
 
         UserDesign userDesign = new UserDesign();
         userDesign.setUserId(userId);
+        userDesign.setDescription(desc);
 
         if (designImage != null && !designImage.isEmpty()) {
             userDesign.setDesignImage(fileStorageService.saveFile(designImage));
