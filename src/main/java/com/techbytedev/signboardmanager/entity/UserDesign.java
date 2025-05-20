@@ -23,6 +23,9 @@ public class UserDesign {
     @Column(name = "design_link")
     private String designLink;
 
+    @Column(name = "description") // Thêm trường mô tả
+    private String description;
+
     @Column(name = "status")
     private String status;
 
