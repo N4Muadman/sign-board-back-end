@@ -122,7 +122,8 @@ public class AdminController {
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'PUT')")
     public ResponseEntity<UserDesign> updateDesignStatus(
             @PathVariable Long id,
-            @RequestParam String status) {
+            @RequestParam String status,
+        @RequestParam(value = "desc", required = false) String desc){
         logger.debug("Updating status for user design with id: {} to {}", id, status);
         UserDesign userDesign = userDesignService.layTheoId(id);
         if (userDesign == null) {
@@ -131,6 +132,7 @@ public class AdminController {
         }
 
         userDesign.setStatus(status);
+        userDesign.setDescription(desc);
         UserDesign updatedDesign = userDesignService.capNhat(userDesign);
         return ResponseEntity.ok(updatedDesign);
     }
