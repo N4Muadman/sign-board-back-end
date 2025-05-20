@@ -91,12 +91,11 @@ public class UserService {
         return Map.of("fullName", "Unknown", "email", "N/A", "phoneNumber", "N/A");
     }
 
-    public void deleteUser(Integer id) {
-        User user = userRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
-        user.setDeletedAt(LocalDateTime.now());
-        userRepository.save(user);
-    }
+public void deleteUser(Integer id) {
+    User user = userRepository.findByIdAndDeletedAtIsNull(id)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+    userRepository.delete(user);
+}
 
     public UserResponse assignAdminRole(Integer id) {
         User user = userRepository.findByIdAndDeletedAtIsNull(id)
