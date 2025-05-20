@@ -118,7 +118,7 @@ public class AdminController {
     }
 
     // Cập nhật trạng thái xử lý thiết kế
-    @PutMapping("/user-designs/{id}/status")
+    @PutMapping("/user-designs/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/user-designs/**', 'PUT')")
     public ResponseEntity<UserDesign> updateDesignStatus(
             @PathVariable Long id,
