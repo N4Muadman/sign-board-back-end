@@ -6,13 +6,15 @@ import com.techbytedev.signboardmanager.dto.response.RoleResponseDTO;
 import com.techbytedev.signboardmanager.service.RoleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/roles")
@@ -28,13 +30,16 @@ public class RoleAdminController {
 
     @GetMapping
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/roles', 'GET')")
-    public ResponseEntity<?> fetchAll() {
+    public ResponseEntity<?> fetchAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         try {
-            List<RoleResponseDTO> roles = roleService.fetchAllRolesWithPermissions();
-            log.info("Trả về {} vai trò", roles.size());
-            return ResponseEntity.ok(roles);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<RoleResponseDTO> rolePage = roleService.fetchAllRolesWithPermissions(pageable);
+            log.info("Trả về {} vai trò trong trang {}", rolePage.getNumberOfElements(), page);
+            return ResponseEntity.ok(rolePage);
         } catch (Exception e) {
-            log.error("Lỗi khi lấy danh sách vai trò: {}", e.getMessage(), e);
+            log.error("Lỗi khi lấy danh sách vai trò phân trang: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("error", "Không thể lấy danh sách vai trò: " + e.getMessage()));
         }

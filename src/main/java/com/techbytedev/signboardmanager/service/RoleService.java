@@ -10,6 +10,9 @@ import com.techbytedev.signboardmanager.repository.RoleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,19 +31,21 @@ public class RoleService {
     private PermissionService permissionService;
 
     @Transactional(readOnly = true)
-    public List<RoleResponseDTO> fetchAllRolesWithPermissions() {
+    public Page<RoleResponseDTO> fetchAllRolesWithPermissions(Pageable pageable) {
         try {
-            List<Role> roles = roleRepository.findAllWithPermissions();
-            log.info("Lấy được {} vai trò", roles.size());
-            return roles.stream()
+            Page<Role> rolePage = roleRepository.findAll(pageable);
+            List<RoleResponseDTO> roleDTOs = rolePage.getContent().stream()
                     .map(this::convertToRoleResponseDTO)
                     .collect(Collectors.toList());
+            log.info("Lấy được {} vai trò trong trang {}", roleDTOs.size(), pageable.getPageNumber());
+            return new PageImpl<>(roleDTOs, pageable, rolePage.getTotalElements());
         } catch (Exception e) {
-            log.error("Lỗi khi lấy danh sách vai trò: {}", e.getMessage(), e);
+            log.error("Lỗi khi lấy danh sách vai trò phân trang: {}", e.getMessage(), e);
             throw new RuntimeException("Không thể lấy danh sách vai trò: " + e.getMessage(), e);
         }
     }
 
+    // Các phương thức khác giữ nguyên
     @Transactional(readOnly = true)
     public RoleResponseDTO fetchById(Integer id) {
         try {
@@ -107,7 +112,6 @@ public class RoleService {
             dto.setName(role.getName());
             dto.setDescription(role.getDescription());
             dto.setActive(role.getActive());
-            // Lấy permissions từ PermissionService thay vì role.getPermissions()
             List<Permission> permissions = permissionService.findByRoleId(role.getId());
             dto.setPermissions(permissions.stream()
                     .map(this::convertToPermissionResponseDTO)
