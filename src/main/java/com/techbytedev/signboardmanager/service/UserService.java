@@ -2,7 +2,9 @@ package com.techbytedev.signboardmanager.service;
 
 import com.techbytedev.signboardmanager.dto.request.UserCreateRequest;
 import com.techbytedev.signboardmanager.dto.request.UserUpdateRequest;
+import com.techbytedev.signboardmanager.dto.response.PermissionResponseDTO;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
+import com.techbytedev.signboardmanager.entity.Permission;
 import com.techbytedev.signboardmanager.entity.Role;
 import com.techbytedev.signboardmanager.entity.User;
 import com.techbytedev.signboardmanager.repository.RoleRepository;
@@ -19,8 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -30,11 +35,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PermissionService permissionService;
 
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, PermissionService permissionService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.permissionService = permissionService;
     }
 
     public Page<UserResponse> getAllUsers(Pageable pageable) {
@@ -226,15 +234,33 @@ public void deleteUser(Integer id) {
     }
 
     public UserResponse convertToResponse(User user) {
-        UserResponse response = new UserResponse();
-        response.setId(user.getId());
-        response.setUsername(user.getUsername());
-        response.setEmail(user.getEmail());
-        response.setFullName(user.getFullName());
-        response.setPhoneNumber(user.getPhoneNumber());
-        response.setAddress(user.getAddress());
-        response.setActive(user.isActive());
-        response.setRoleName(user.getRoleName());
-        return response;
+    UserResponse response = new UserResponse();
+    response.setId(user.getId());
+    response.setUsername(user.getUsername());
+    response.setEmail(user.getEmail());
+    response.setFullName(user.getFullName());
+    response.setPhoneNumber(user.getPhoneNumber());
+    response.setAddress(user.getAddress());
+    response.setActive(user.isActive());
+    response.setRoleName(user.getRole() != null ? user.getRole().getName() : null);
+
+    if (user.getRole() != null && user.getRole().getId() != null) {
+        List<Permission> permissions = permissionService.findByRoleId(user.getRole().getId());
+        Set<PermissionResponseDTO> permissionDTOs = permissions.stream()
+            .map(permission -> {
+                PermissionResponseDTO dto = new PermissionResponseDTO();
+                dto.setId(permission.getId());
+                dto.setName(permission.getName());
+                dto.setApiPath(permission.getApiPath());
+                dto.setMethod(permission.getMethod());
+                dto.setModule(permission.getModule());
+                return dto;
+            }).collect(Collectors.toSet());
+
+        response.setPermissions(permissionDTOs); // 👈 Gán vào UserResponse
     }
+
+    return response;
+}
+
 }
