@@ -106,7 +106,7 @@ public class ArticleService {
         List<Article> articles = articleRepository.findByTypeAndIsFeaturedTrueOrderByCreatedAtDesc(PostType.project);
         for (Article article : articles) {
             if (article.getFeaturedImageUrl() != null) {
-                article.setFeaturedImageUrl("/images/" + article.getFeaturedImageUrl());
+                article.setFeaturedImageUrl(article.getFeaturedImageUrl());
             }
         }
         return articles;
@@ -116,7 +116,7 @@ public class ArticleService {
         List<Article> articles = articleRepository.findByType(PostType.production_info);
         for (Article article : articles) {
             if (article.getFeaturedImageUrl() != null) {
-                article.setFeaturedImageUrl("/images/" + article.getFeaturedImageUrl());
+                article.setFeaturedImageUrl( article.getFeaturedImageUrl());
             }
         }
         return articles;
@@ -126,7 +126,7 @@ public class ArticleService {
         List<Article> articles = articleRepository.findByTypeOrderByCreatedAtDesc(PostType.news);
         for (Article article : articles) {
             if (article.getFeaturedImageUrl() != null) {
-                article.setFeaturedImageUrl("/images/" + article.getFeaturedImageUrl());
+                article.setFeaturedImageUrl(  article.getFeaturedImageUrl());
             }
         }
         return articles;
