@@ -11,5 +11,5 @@ public class UserCreateRequest {
     private String phoneNumber;
     private String address;
     private boolean isActive;
-    private String roleName;
+    private Integer roleId; // Changed from roleName to roleId
 }

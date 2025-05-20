@@ -8,5 +8,5 @@ public class UserUpdateRequest {
     private String phoneNumber;
     private String address;
     private Boolean isActive;
-    private String roleName;
+    private Integer roleId; // Changed from roleName to roleId
 }

@@ -66,12 +66,13 @@ public class UserService {
         if (request.getIsActive() != null) {
             user.setActive(request.getIsActive());
         }
+        if (request.getRoleId() != null) {
+            Role role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new IllegalArgumentException("Role not found with id: " + request.getRoleId()));
+            user.setRole(role);
+        }
 
         user.setUpdatedAt(LocalDateTime.now());
-        Role role = request.getRoleName().equals("Admin") ? roleRepository.findByName("Admin")
-                .orElseThrow(() -> new IllegalArgumentException("Admin role not found")) : roleRepository.findByName("Customer")
-                .orElseThrow(() -> new IllegalArgumentException("Customer role not found"));
-        user.setRole(role);
         userRepository.save(user);
 
         return convertToResponse(user);
@@ -190,10 +191,9 @@ public class UserService {
         user.setFullName(request.getFullName());
         user.setAddress(request.getAddress());
         user.setPhoneNumber(request.getPhoneNumber());
-       
-        Role role = request.getRoleName().equals("Admin") ? roleRepository.findByName("Admin")
-                .orElseThrow(() -> new IllegalArgumentException("Admin role not found")) : roleRepository.findByName("Customer")
-                .orElseThrow(() -> new IllegalArgumentException("Customer role not found"));
+
+        Role role = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new IllegalArgumentException("Role not found with id: " + request.getRoleId()));
         user.setRole(role);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
@@ -209,7 +209,7 @@ public class UserService {
                 .map(this::convertToResponse);
     }
 
-      @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public User findByUsername(String username) {
         User user = userRepository.findByUsername(username).orElse(null);
         if (user != null) {
