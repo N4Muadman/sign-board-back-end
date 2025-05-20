@@ -13,7 +13,7 @@ public class UserDesignResponseDTO {
 
     // Constructor
     public UserDesignResponseDTO(Long designId, String designImage, String designLink, String status,
-                                 String designerFullName, String designerEmail, String designerPhoneNumber,String description) {
+            String description, String designerFullName, String designerEmail, String designerPhoneNumber) {
         this.designId = designId;
         this.designImage = designImage;
         this.designLink = designLink;
@@ -23,6 +23,8 @@ public class UserDesignResponseDTO {
         this.designerPhoneNumber = designerPhoneNumber;
         this.description = description;
     }
+
+    
  public  String getDescription() {
         return description;
     }
