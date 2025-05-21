@@ -1,5 +1,7 @@
 package com.techbytedev.signboardmanager.dto.response;
 
+import java.util.Set;
+
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,4 +18,5 @@ public class UserResponse {
     private String address;
     private boolean isActive;
     private String roleName;
+    private Set<PermissionResponseDTO> permissions;
 }

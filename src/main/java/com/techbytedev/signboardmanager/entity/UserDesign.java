@@ -5,53 +5,50 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+@Data
 @Entity
 @Table(name = "user_designs")
-@Data
 public class UserDesign {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    @Column(name = "design_name", length = 255)
-    private String designName;
+    @Column(name = "design_image")
+    private String designImage;
 
-    @Column(name = "canva_design_id", nullable = false, unique = true, length = 255)
-    private String canvaDesignId;
+    @Column(name = "design_link")
+    private String designLink;
 
-    @Column(name = "canva_preview_url", columnDefinition = "TEXT")
-    private String canvaPreviewUrl;
+   @Column(columnDefinition = "MEDIUMTEXT",name = "description")// Thêm trường mô tả
+    private String description;
 
-    @Column(name = "canva_export_link", columnDefinition = "TEXT")
-    private String canvaExportLink;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Status status = Status.DRAFT;
-
-    @Column(columnDefinition = "TEXT")
-    private String notes;
-
-    @Column(name = "user_feedback", columnDefinition = "TEXT")
-    private String userFeedback;
+    @Column(name = "status")
+    private String status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
-
-    @Column(name = "submitted_at")
-    private LocalDateTime submittedAt;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    public enum Status {
-        DRAFT, SUBMITTED, PROCESSING, QUOTED, REVISION_NEEDED, APPROVED, COMPLETED, CANCELLED
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (status == null) {
+            status = "Mới";
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

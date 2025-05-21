@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 public class SiteSetting {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
     @Column(name = "setting_key")
     private String key;
 
@@ -22,8 +24,15 @@ public class SiteSetting {
     private boolean isPublic;
 
     @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime updatedAt;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getKey() {
         return key;

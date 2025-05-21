@@ -8,6 +8,14 @@ public class MaterialResponse {
     private String name;
     private String description;
 
+    public MaterialResponse() {
+    }
+
+    public MaterialResponse(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
     public int getId() {
         return id;
     }
