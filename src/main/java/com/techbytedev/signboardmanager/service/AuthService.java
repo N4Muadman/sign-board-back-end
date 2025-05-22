@@ -13,9 +13,12 @@ import com.techbytedev.signboardmanager.repository.RoleRepository;
 import com.techbytedev.signboardmanager.repository.UserRepository;
 import com.techbytedev.signboardmanager.util.JwtUtil;
 import jakarta.mail.MessagingException;
+
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,9 +40,9 @@ public class AuthService {
     private final UserService userService;
 
     public AuthService(UserRepository userRepository, RoleRepository roleRepository,
-                       PasswordResetTokenRepository tokenRepository, PasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil, AuthenticationManager authenticationManager,
-                       EmailService emailService, UserService userService) {
+            PasswordResetTokenRepository tokenRepository, PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil, AuthenticationManager authenticationManager,
+            EmailService emailService, UserService userService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.tokenRepository = tokenRepository;
@@ -87,8 +90,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponse login(AuthRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         String username = authentication.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
@@ -141,5 +143,21 @@ public class AuthService {
         Random random = new Random();
         int code = 100000 + random.nextInt(900000);
         return String.valueOf(code);
+    }
+
+    public UserResponse getProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println(">>>>>>>>authentication:            " + authentication);
+        System.out.println(">>>>>check: authentication # null: " + authentication != null);
+        System.out.println(("auth.name = "+ authentication.getName()));
+        if (authentication != null && authentication.isAuthenticated()) {
+            String username = authentication.getName();
+
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            return userService.convertToResponse(user);
+        }
+        return null;
     }
 }

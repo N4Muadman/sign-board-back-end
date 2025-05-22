@@ -1,6 +1,7 @@
 package com.techbytedev.signboardmanager.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.techbytedev.signboardmanager.dto.response.AuthResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.User;
@@ -9,6 +10,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +21,8 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -32,7 +37,8 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private String frontendUrl;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException, ServletException {
         logger.debug("onAuthenticationSuccess called with request URI: {}", request.getRequestURI());
         if (authentication == null) {
             logger.error("Authentication is null in CustomAuthenticationSuccessHandler");
@@ -70,15 +76,23 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             userResponse.setActive(user.isActive());
             userResponse.setRoleName(user.getRoleName()); // Sử dụng roleName đã đồng bộ từ User
 
-            AuthResponse authResponse = new AuthResponse();
-            authResponse.setToken(jwt);
-            authResponse.setUser(userResponse);
+            // AuthResponse authResponse = new AuthResponse();
+            // authResponse.setToken(jwt);
+            // authResponse.setUser(userResponse);
 
-            response.setContentType("application/json;charset=UTF-8"); // Đảm bảo UTF-8
-            response.setStatus(HttpServletResponse.SC_OK);
-            new ObjectMapper().writeValue(response.getWriter(), authResponse);
+            // response.setContentType("application/json;charset=UTF-8"); // Đảm bảo UTF-8
+            // response.setStatus(HttpServletResponse.SC_OK);
+            // new ObjectMapper().writeValue(response.getWriter(), authResponse);
+
+            // Redirect đến frontend với token và user trong query parameters
+            String redirectUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/auth/callback")
+                    .queryParam("token", jwt)
+                    .build().toUriString();
+
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
         } else {
-            logger.error("Authentication principal is not a CustomOidcUser: {}", authentication.getPrincipal().getClass().getName());
+            logger.error("Authentication principal is not a CustomOidcUser: {}",
+                    authentication.getPrincipal().getClass().getName());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication principal is not CustomOidcUser");
         }
     }

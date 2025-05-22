@@ -4,6 +4,7 @@ import com.techbytedev.signboardmanager.dto.request.AuthRequest;
 import com.techbytedev.signboardmanager.dto.request.RegisterRequest;
 import com.techbytedev.signboardmanager.dto.request.ResetPasswordRequest;
 import com.techbytedev.signboardmanager.dto.response.AuthResponse;
+import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.service.AuthService;
 import jakarta.mail.MessagingException;
 import org.springframework.http.ResponseEntity;
@@ -46,5 +47,10 @@ public class AuthController {
             @RequestParam String email,
             @RequestParam String fullName) {
         return ResponseEntity.ok(authService.googleLogin(email, fullName));
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<UserResponse> getProfile() {
+        return ResponseEntity.ok(authService.getProfile());
     }
 }
