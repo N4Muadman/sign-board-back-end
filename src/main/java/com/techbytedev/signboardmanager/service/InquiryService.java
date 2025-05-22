@@ -89,7 +89,7 @@ public class InquiryService {
     private void sendEmailToAdmins(Inquiry inquiry, Product product) {
        // Tìm tất cả admin
         Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
-        Page<UserResponse> adminUsers = userService.searchUsers(null, null, "Admin", true, pageable);
+        Page<UserResponse> adminUsers = userService.searchUsers(null, "admin@hotrodoan.vn", null, true, pageable);
         List<String> adminEmails = adminUsers.getContent().stream()
                 .map(UserResponse::getEmail)
                 .filter(email -> email != null && !email.equals("N/A"))
