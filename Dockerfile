@@ -1,23 +1,11 @@
-# Sử dụng image OpenJDK 17 làm base image
-FROM openjdk:17-jdk-slim
-
-# Đặt thư mục làm việc
+FROM maven:3.9.8-amazoncorretto-21 AS build
 WORKDIR /app
-
-# Sao chép file pom.xml và tải dependencies
 COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
-RUN ./mvnw dependency:go-offline
-
-# Sao chép mã nguồn
 COPY src ./src
+RUN mvn package -DskipTests
 
-# Build ứng dụng
-RUN ./mvnw package -DskipTests
-
-# Expose cổng 8080
+FROM amazoncorretto:21.0.4
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-
-# Chạy ứng dụng
-CMD ["java", "-jar", "target/SignBoardManager-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
