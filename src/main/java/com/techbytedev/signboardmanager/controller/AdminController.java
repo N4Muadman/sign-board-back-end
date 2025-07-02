@@ -303,26 +303,28 @@ public ResponseEntity<String> deleteUserDesign(@PathVariable Long id) {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(value = "/product/create", consumes = {"multipart/form-data"})
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/create', 'POST')")
-    public ResponseEntity<ProductResponse> createProduct(
-            @RequestPart("product") ProductRequest productRequest,
-            @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) {
-        try {
-            ProductResponse productResponse = productService.createProduct(productRequest, imageFiles);
-            return ResponseEntity.ok(productResponse);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-    }
+    @PostMapping(value = "/product/create")
+@PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/create', 'POST')")
+public ResponseEntity<ProductResponse> createProduct(
+        @ModelAttribute ProductRequest productRequest,
+        @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) {
 
-    @PutMapping(value = "/product/edit/{id}", consumes = {"multipart/form-data"})
+    try {
+        ProductResponse productResponse = productService.createProduct(productRequest, imageFiles);
+        return ResponseEntity.ok(productResponse);
+    } catch (IOException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+    }
+}
+
+
+    @PutMapping(value = "/product/edit/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/edit/{id}', 'PUT')")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable("id") int productId,
-            @RequestPart("product") ProductRequest productRequest,
+            @ModelAttribute ProductRequest productRequest,
             @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) {
         try {
             ProductResponse response = productService.updateProduct(productId, productRequest, imageFiles);

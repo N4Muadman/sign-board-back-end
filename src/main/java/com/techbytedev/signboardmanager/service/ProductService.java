@@ -150,10 +150,7 @@ public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) 
     private void updateImages(Product product, List<MultipartFile> imageFiles) throws IOException {
         List<ProductImage> existingImages = productImageRepository.findByProductId(product.getId());
         if (imageFiles != null && !imageFiles.isEmpty()) {
-            for (ProductImage pi : existingImages) {
-                fileStorageService.deleteFile(pi.getImageUrl());
-                productImageRepository.delete(pi);
-            }
+            
 
             for (MultipartFile imageFile : imageFiles) {
                 String fileName = fileStorageService.saveFile(imageFile);
