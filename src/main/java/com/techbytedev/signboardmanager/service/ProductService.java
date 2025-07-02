@@ -104,30 +104,31 @@ public class ProductService {
         return productRepository.findByCategoryIdIn(categoryIds, pageable);
     }
 
-    @Transactional
-    public ProductResponse updateProduct(int productId, ProductRequest productRequest, List<MultipartFile> imageFiles)
-            throws IOException {
-        Product existingProduct = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+@Transactional
+public ProductResponse updateProduct(int productId, ProductRequest productRequest, List<MultipartFile> imageFiles)
+        throws IOException {
+    Product existingProduct = productRepository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
-        existingProduct.setName(productRequest.getName());
-        existingProduct.setDescription(productRequest.getDescription());
-        existingProduct.setPrice(productRequest.getPrice());
-        existingProduct.setDiscountPercent(productRequest.getDiscount());
-        existingProduct.setDiscountedPrice(productRequest.getDiscountPrice());
-        existingProduct.setActive(true);
-        existingProduct.setDimensions(productRequest.getDimensions());
-        existingProduct.setSlug(productRequest.getSlug());
+    // Cập nhật thông tin cơ bản
+    existingProduct.setName(productRequest.getName());
+    existingProduct.setDescription(productRequest.getDescription());
+    existingProduct.setPrice(productRequest.getPrice());
+    existingProduct.setDiscountPercent(productRequest.getDiscount());
+    existingProduct.setDiscountedPrice(productRequest.getDiscountPrice());
+    existingProduct.setActive(true);
+    existingProduct.setDimensions(productRequest.getDimensions());
+    existingProduct.setSlug(productRequest.getSlug());
 
-        Category category = categoryRepository.findById(productRequest.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
-        existingProduct.setCategory(category);
+    Category category = categoryRepository.findById(productRequest.getCategoryId())
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
+    existingProduct.setCategory(category);
 
-        updateMaterials(existingProduct, productRequest.getMaterialIds());
-        updateImages(existingProduct, imageFiles);
+    updateMaterials(existingProduct, productRequest.getMaterialIds());
+    updateImages(existingProduct, imageFiles, productRequest.getKeptImageUrls());
 
-        return convertToResponse(existingProduct);
-    }
+    return convertToResponse(existingProduct);
+}
 
     private void updateMaterials(Product product, List<Integer> newMaterialIds) {
         List<ProductMaterial> existingLinks = productMaterialRepository.findByProductId(product.getId());
@@ -154,14 +155,18 @@ public class ProductService {
         }
     }
 
-    private void updateImages(Product product, List<MultipartFile> imageFiles) throws IOException {
-    List<ProductImage> existingImages = product.getImages(); // dùng quan hệ đã ánh xạ
+    private void updateImages(Product product, List<MultipartFile> imageFiles, List<String> keptImageUrls) throws IOException {
+    List<ProductImage> existingImages = product.getImages();
 
-    // Xóa ảnh cũ cả trong filesystem và trong list
-    if (existingImages != null) {
-        for (ProductImage pi : new ArrayList<>(existingImages)) {
-            fileStorageService.deleteFile(pi.getImageUrl());
-            existingImages.remove(pi); // JPA sẽ tự delete trong DB nhờ orphanRemoval=true
+    // Xóa những ảnh không nằm trong danh sách giữ lại
+    if (existingImages != null && keptImageUrls != null) {
+        Iterator<ProductImage> iterator = existingImages.iterator();
+        while (iterator.hasNext()) {
+            ProductImage pi = iterator.next();
+            if (!keptImageUrls.contains(pi.getImageUrl())) {
+                fileStorageService.deleteFile(pi.getImageUrl());
+                iterator.remove(); // JPA tự xóa nếu orphanRemoval=true
+            }
         }
     }
 
@@ -173,7 +178,7 @@ public class ProductService {
                 ProductImage newImage = new ProductImage();
                 newImage.setProduct(product);
                 newImage.setImageUrl(fileName);
-                product.getImages().add(newImage); // tự động insert vào DB
+                product.getImages().add(newImage); // Cascade persist
             }
         }
     }

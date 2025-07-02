@@ -320,21 +320,21 @@ public ResponseEntity<ProductResponse> createProduct(
 }
 
 
-    @PutMapping(value = "/product/edit/{id}")
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/edit/{id}', 'PUT')")
-    public ResponseEntity<ProductResponse> updateProduct(
-            @PathVariable("id") int productId,
-            @ModelAttribute ProductRequest productRequest,
-            @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) {
-        try {
-            ProductResponse response = productService.updateProduct(productId, productRequest, imageFiles);
-            return ResponseEntity.ok(response);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+ @PutMapping(value = "/product/edit/{id}")
+@PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/edit/{id}', 'PUT')")
+public ResponseEntity<ProductResponse> updateProduct(
+        @PathVariable("id") int productId,
+        @ModelAttribute ProductRequest productRequest,
+        @RequestPart(value = "images", required = false) List<MultipartFile> imageFiles) {
+    try {
+        ProductResponse response = productService.updateProduct(productId, productRequest, imageFiles);
+        return ResponseEntity.ok(response);
+    } catch (IOException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
+}
 
     @DeleteMapping("/product/delete/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/product/delete/{id}', 'DELETE')")

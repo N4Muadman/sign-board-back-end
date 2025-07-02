@@ -17,6 +17,8 @@ public class ProductRequest {
     private String dimensions;
     private List<Integer> materialIds = new ArrayList<>();
     private int categoryId;
+     private List<String> keptImageUrls; 
+
 
     public String getName() {
         return name;

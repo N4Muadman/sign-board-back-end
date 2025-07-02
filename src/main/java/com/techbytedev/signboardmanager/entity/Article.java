@@ -41,6 +41,16 @@ public class Article {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+    @Column(name = "image_base64", columnDefinition = "LONGTEXT")
+    private String imageBase64;
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
+    }
 
     public int getId() {
         return id;

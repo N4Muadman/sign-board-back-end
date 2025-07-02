@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -29,27 +30,31 @@ public class ArticleService {
     }
 
     public Article createArticleFromDTO(ArticleRequest dto, MultipartFile imageFile) throws IOException {
-        Article article = new Article();
-        article.setTitle(dto.getTitle());
-        article.setContent(dto.getContent());
-        article.setExcerpt(dto.getExcerpt());
-        article.setFeatured(dto.isFeatured());
+    Article article = new Article();
+    article.setTitle(dto.getTitle());
+    article.setContent(dto.getContent());
+    article.setExcerpt(dto.getExcerpt());
+    article.setFeatured(dto.isFeatured());
 
-        try {
-            article.setType(PostType.valueOf(dto.getType()));
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Loại bài viết không hợp lệ");
-        }
-
-        if (imageFile != null && !imageFile.isEmpty()) {
-            String fileName = fileStorageService.saveFile(imageFile);
-            article.setFeaturedImageUrl(fileName);
-        }
-
-        article.setCreatedAt(LocalDateTime.now());
-        article.setUpdatedAt(LocalDateTime.now());
-        return articleRepository.save(article);
+    try {
+        article.setType(PostType.valueOf(dto.getType()));
+    } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException("Loại bài viết không hợp lệ");
     }
+
+    if (imageFile != null && !imageFile.isEmpty()) {
+        String fileName = fileStorageService.saveFile(imageFile); // Vẫn lưu ảnh bình thường nếu bạn cần
+        article.setFeaturedImageUrl(fileName);
+
+        // ✅ Lưu thêm ảnh dạng base64
+        String base64 = Base64.getEncoder().encodeToString(imageFile.getBytes());
+        article.setImageBase64(base64);
+    }
+
+    article.setCreatedAt(LocalDateTime.now());
+    article.setUpdatedAt(LocalDateTime.now());
+    return articleRepository.save(article);
+}
 
     public Article updateArticle(int id, ArticleRequest dto, MultipartFile imageFile) throws IOException {
         Article existingArticle = articleRepository.findById(id)
