@@ -33,7 +33,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final JwtUtil jwtUtil;
 
-    @Value("${application.frontend.url:http://localhost:3000}")
+    @Value("${application.frontend.url:https://ai2.vn/}")
     private String frontendUrl;
 
     @Override
