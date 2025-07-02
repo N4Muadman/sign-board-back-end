@@ -5,6 +5,8 @@ import com.techbytedev.signboardmanager.dto.response.MaterialResponse;
 import com.techbytedev.signboardmanager.dto.response.ProductResponse;
 import com.techbytedev.signboardmanager.entity.*;
 import com.techbytedev.signboardmanager.repository.*;
+
+import org.slf4j.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,13 +29,14 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final FileStorageService fileStorageService;
     private final CategoryService categoryService;
+    private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
 
     public ProductService(ProductRepository productRepository, ProductMapper productMapper,
-                          ProductImageRepository productImageRepository,
-                          ProductMaterialRepository productMaterialRepository,
-                          MaterialRepository materialRepository, CategoryRepository categoryRepository,
-                          FileStorageService fileStorageService,
-                          CategoryService categoryService) {
+            ProductImageRepository productImageRepository,
+            ProductMaterialRepository productMaterialRepository,
+            MaterialRepository materialRepository, CategoryRepository categoryRepository,
+            FileStorageService fileStorageService,
+            CategoryService categoryService) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.productImageRepository = productImageRepository;
@@ -47,12 +50,15 @@ public class ProductService {
     public Page<Product> findAll(Pageable pageable) {
         return productRepository.findAll(pageable);
     }
-// Trong ProductService.java
-@Transactional
-public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) {
-    return productRepository.findByCategoryId(categoryId, pageable);
-}
-    public ProductResponse createProduct(ProductRequest productRequest, List<MultipartFile> imageFiles) throws IOException {
+
+    // Trong ProductService.java
+    @Transactional
+    public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) {
+        return productRepository.findByCategoryId(categoryId, pageable);
+    }
+
+    public ProductResponse createProduct(ProductRequest productRequest, List<MultipartFile> imageFiles)
+            throws IOException {
         Product product = new Product();
         product.setName(productRequest.getName());
         product.setSlug(productRequest.getSlug());
@@ -90,7 +96,7 @@ public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) 
         return convertToResponse(savedProduct);
     }
 
-   @Transactional
+    @Transactional
     public Page<Product> getProductsByCategoryAndSubcategories(int categoryId, Pageable pageable) {
         // Lấy danh sách ID danh mục và danh mục con
         List<Integer> categoryIds = categoryService.getCategoryAndSubcategoryIds(categoryId);
@@ -99,7 +105,8 @@ public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) 
     }
 
     @Transactional
-    public ProductResponse updateProduct(int productId, ProductRequest productRequest, List<MultipartFile> imageFiles) throws IOException {
+    public ProductResponse updateProduct(int productId, ProductRequest productRequest, List<MultipartFile> imageFiles)
+            throws IOException {
         Product existingProduct = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
@@ -148,21 +155,29 @@ public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) 
     }
 
     private void updateImages(Product product, List<MultipartFile> imageFiles) throws IOException {
-        List<ProductImage> existingImages = productImageRepository.findByProductId(product.getId());
-        if (imageFiles != null && !imageFiles.isEmpty()) {
-            
+    List<ProductImage> existingImages = product.getImages(); // dùng quan hệ đã ánh xạ
 
-            for (MultipartFile imageFile : imageFiles) {
-                String fileName = fileStorageService.saveFile(imageFile);
-                if (fileName != null) {
-                    ProductImage newImage = new ProductImage();
-                    newImage.setProduct(product);
-                    newImage.setImageUrl(fileName);
-                    productImageRepository.save(newImage);
-                }
+    // Xóa ảnh cũ cả trong filesystem và trong list
+    if (existingImages != null) {
+        for (ProductImage pi : new ArrayList<>(existingImages)) {
+            fileStorageService.deleteFile(pi.getImageUrl());
+            existingImages.remove(pi); // JPA sẽ tự delete trong DB nhờ orphanRemoval=true
+        }
+    }
+
+    // Thêm ảnh mới
+    if (imageFiles != null && !imageFiles.isEmpty()) {
+        for (MultipartFile imageFile : imageFiles) {
+            String fileName = fileStorageService.saveFile(imageFile);
+            if (fileName != null) {
+                ProductImage newImage = new ProductImage();
+                newImage.setProduct(product);
+                newImage.setImageUrl(fileName);
+                product.getImages().add(newImage); // tự động insert vào DB
             }
         }
     }
+}
 
     public ProductResponse convertToResponse(Product product) {
         ProductResponse response = new ProductResponse();
@@ -246,8 +261,8 @@ public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) 
     }
 
     public List<ProductResponse> filterProducts(String name, Integer categoryId,
-                                                BigDecimal minPrice, BigDecimal maxPrice,
-                                                String sort) {
+            BigDecimal minPrice, BigDecimal maxPrice,
+            String sort) {
         List<Product> products = productRepository.findAll();
         if (name != null && !name.trim().isEmpty()) {
             products = products.stream()

@@ -396,14 +396,13 @@ public ResponseEntity<ProductResponse> createProduct(
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(value = "/article/create", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/article/create")
      @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article/**', 'POST')")
     public ResponseEntity<Article> createArticle(
-            @RequestPart("article") String articleJson,
+            @ModelAttribute ArticleRequest articleRequest,
             @RequestPart(value = "image", required = false) MultipartFile imageFile) {
         try {
-            ArticleRequest dto = objectMapper.readValue(articleJson, ArticleRequest.class);
-            Article article = articleService.createArticleFromDTO(dto, imageFile);
+            Article article = articleService.createArticleFromDTO(articleRequest, imageFile);
             return ResponseEntity.status(HttpStatus.CREATED).body(article);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -414,15 +413,14 @@ public ResponseEntity<ProductResponse> createProduct(
         }
     }
 
-    @PutMapping(value = "/article/edit/{id}", consumes = {"multipart/form-data"})
+    @PutMapping(value = "/article/edit/{id}")
      @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article/**', 'PUT')")
     public ResponseEntity<Article> updateArticle(
             @PathVariable int id,
-            @RequestPart("article") String articleJson,
+            @ModelAttribute ArticleRequest articleRequest,
             @RequestPart(value = "image", required = false) MultipartFile imageFile) {
         try {
-            ArticleRequest dto = objectMapper.readValue(articleJson, ArticleRequest.class);
-            Article updatedArticle = articleService.updateArticle(id, dto, imageFile);
+            Article updatedArticle = articleService.updateArticle(id, articleRequest, imageFile);
             return ResponseEntity.ok(updatedArticle);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

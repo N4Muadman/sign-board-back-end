@@ -31,7 +31,6 @@ public class ArticleService {
     public Article createArticleFromDTO(ArticleRequest dto, MultipartFile imageFile) throws IOException {
         Article article = new Article();
         article.setTitle(dto.getTitle());
-        article.setSlug(dto.getSlug());
         article.setContent(dto.getContent());
         article.setExcerpt(dto.getExcerpt());
         article.setFeatured(dto.isFeatured());
@@ -57,7 +56,6 @@ public class ArticleService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết"));
 
         existingArticle.setTitle(dto.getTitle());
-        existingArticle.setSlug(dto.getSlug());
         existingArticle.setContent(dto.getContent());
         existingArticle.setExcerpt(dto.getExcerpt());
         existingArticle.setFeatured(dto.isFeatured());

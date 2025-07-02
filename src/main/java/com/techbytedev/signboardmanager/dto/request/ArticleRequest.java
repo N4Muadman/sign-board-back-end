@@ -6,7 +6,6 @@ import lombok.Data;
 @Data
 public class ArticleRequest {
     private String title;
-    private String slug;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String content;
     private String excerpt;
@@ -21,13 +20,9 @@ public class ArticleRequest {
         this.title = title;
     }
 
-    public String getSlug() {
-        return slug;
-    }
+   
 
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
+    
 
     public String getContent() {
         return content;

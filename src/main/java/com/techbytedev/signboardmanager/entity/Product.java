@@ -58,7 +58,7 @@ public class Product {
     @Column
     private LocalDateTime deletedAt;
 
-    @OneToMany(mappedBy = "product", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "product", fetch = FetchType.EAGER, cascade = CascadeType.ALL,orphanRemoval = true)
     private List<ProductImage> images;
 
     public List<ProductImage> getImages() {

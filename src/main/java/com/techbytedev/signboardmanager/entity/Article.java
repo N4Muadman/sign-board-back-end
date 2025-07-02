@@ -18,7 +18,7 @@ public class Article {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "slug", unique = true, nullable = false)
+    @Column(name = "slug")
     private String slug;
 
     @Column(columnDefinition = "MEDIUMTEXT")

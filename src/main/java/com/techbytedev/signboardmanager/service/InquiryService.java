@@ -47,7 +47,7 @@ public class InquiryService {
     public InquiryResponse createInquiry(InquiryRequest request) {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-
+        logger.info("Creating inquiry for product: {}", product.getName()); 
         Inquiry inquiry = new Inquiry();
         inquiry.setName(request.getName());
         inquiry.setPhone(request.getPhone());
@@ -55,9 +55,11 @@ public class InquiryService {
         inquiry.setAddress(request.getAddress());
         inquiry.setMessage(request.getMessage());
         inquiry.setProduct(product);
+        inquiry.setStatus(request.getStatus() != null ? request.getStatus() : "NOCONTACT");
         inquiry.setCreatedAt(LocalDateTime.now());
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
         if (authentication != null && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             String username = authentication.getName();
@@ -82,6 +84,7 @@ public class InquiryService {
         response.setMessage(saved.getMessage());
         response.setCreatedAt(saved.getCreatedAt());
         response.setProductName(product.getName());
+        response.setStatus(saved.getStatus() != null ? saved.getStatus() : "NOCONTACT");
 
         return response;
     }
@@ -89,7 +92,7 @@ public class InquiryService {
     private void sendEmailToAdmins(Inquiry inquiry, Product product) {
        // Tìm tất cả admin
         Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
-        Page<UserResponse> adminUsers = userService.searchUsers(null, "admin@hotrodoan.vn", null, true, pageable);
+        Page<UserResponse> adminUsers = userService.searchUsers(null, "phamminhdao12342@gmail.com", null, true, pageable);
         List<String> adminEmails = adminUsers.getContent().stream()
                 .map(UserResponse::getEmail)
                 .filter(email -> email != null && !email.equals("N/A"))

@@ -10,6 +10,7 @@ public class InquiryRequest {
     private String address;
     private String message;
     private Integer productId;
+    private String status;
 
     public String getName() {
         return name;
