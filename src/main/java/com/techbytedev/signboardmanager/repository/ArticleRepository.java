@@ -16,4 +16,7 @@ public interface ArticleRepository extends JpaRepository<Article, Integer> {
     List<Article> findByType(PostType type);
     List<Article> findByTypeOrderByCreatedAtDesc(PostType type);
     Page<Article> findAll(Pageable pageable);
+    Page<Article> findAllByTypeOrderByCreatedAtDesc(Pageable pageable, PostType type);
+    
+
 }

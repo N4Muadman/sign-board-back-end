@@ -374,9 +374,10 @@ public ResponseEntity<ProductResponse> updateProduct(
     @GetMapping("/article/list")
     public ResponseEntity<Map<String, Object>> getListArticle(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
+            @RequestParam(defaultValue = "9") int size,
+            @RequestParam(defaultValue = "news") String style) {
         Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Article> articlePage = articleService.getAllArticles(pageable);
+        Page<Article> articlePage = articleService.getAllArticles(pageable, style);
 
         List<Article> articles = articlePage.getContent();
         for (Article article : articles) {

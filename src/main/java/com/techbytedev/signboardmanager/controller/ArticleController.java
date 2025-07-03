@@ -28,12 +28,12 @@ public class ArticleController {
     @GetMapping("/featured-projects")
     public ResponseEntity<?> getFeaturedProjects() {
         List<Article> articles = articleService.getFeaturedProjects();
-        if(articles.isEmpty())
-        {
+        if (articles.isEmpty()) {
             return ResponseEntity.ok("Không có dự án nào.");
         }
         return ResponseEntity.ok(articles);
     }
+
     // hiển thị trang sản xuất
     @GetMapping("/production")
     public ResponseEntity<?> getProductionArticles() {
@@ -46,14 +46,15 @@ public class ArticleController {
         return ResponseEntity.ok(articles);
     }
 
-     // hiển thị danh sách article
+    // hiển thị danh sách article
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> getListArticle(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "9") int size) {
+            @RequestParam(defaultValue = "9") int size,
+            @RequestParam(defaultValue = "") String style) {
 
         Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Article> articlePage = articleService.getAllArticles(pageable);
+        Page<Article> articlePage = articleService.getAllArticles(pageable, style);
 
         List<Article> articles = articlePage.getContent();
         for (Article article : articles) {
@@ -84,6 +85,7 @@ public class ArticleController {
 
         return ResponseEntity.ok(articles);
     }
+
     // tìm kiếm tin tức
     @GetMapping("/search")
     public ResponseEntity<List<Article>> searchArticles(@RequestParam String keyword) {

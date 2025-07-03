@@ -3,8 +3,13 @@ package com.techbytedev.signboardmanager.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import lombok.Data;
+
+@Data
 public class ProductDTO {
     private int id;
     private String name;
@@ -21,6 +26,8 @@ public class ProductDTO {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
     private List<ProductImageDTO> images;
+    private Map<String, String> imageBase64Map = new HashMap<>(); // Map of imageUrl to imageBase64
+
 
     // Getters and Setters
     public int getId() {

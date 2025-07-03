@@ -15,8 +15,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Base64;
 
 @Service
 public class ProductService {
@@ -51,7 +53,6 @@ public class ProductService {
         return productRepository.findAll(pageable);
     }
 
-    // Trong ProductService.java
     @Transactional
     public Page<Product> getProductsByCategoryId(int categoryId, Pageable pageable) {
         return productRepository.findByCategoryId(categoryId, pageable);
@@ -67,6 +68,8 @@ public class ProductService {
         product.setDiscountedPrice(productRequest.getDiscountPrice());
         product.setDescription(productRequest.getDescription());
         product.setDimensions(productRequest.getDimensions());
+        product.setCreatedAt(LocalDateTime.now());
+        product.setUpdatedAt(LocalDateTime.now());
         Category category = categoryRepository.findById(productRequest.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found"));
         product.setCategory(category);
@@ -83,12 +86,17 @@ public class ProductService {
 
         if (imageFiles != null && !imageFiles.isEmpty()) {
             for (MultipartFile imageFile : imageFiles) {
-                String fileName = fileStorageService.saveFile(imageFile);
-                if (fileName != null) {
-                    ProductImage productImage = new ProductImage();
-                    productImage.setProduct(savedProduct);
-                    productImage.setImageUrl(fileName);
-                    productImageRepository.save(productImage);
+                if (imageFile != null && !imageFile.isEmpty()) {
+                    String fileName = fileStorageService.saveFile(imageFile);
+                    if (fileName != null) {
+                        ProductImage productImage = new ProductImage();
+                        productImage.setProduct(savedProduct);
+                        productImage.setImageUrl(fileName);
+                        productImage.setCreatedAt(LocalDateTime.now());
+                        String base64 = Base64.getEncoder().encodeToString(imageFile.getBytes());
+                        productImage.setImageBase64(base64);
+                        productImageRepository.save(productImage);
+                    }
                 }
             }
         }
@@ -98,37 +106,35 @@ public class ProductService {
 
     @Transactional
     public Page<Product> getProductsByCategoryAndSubcategories(int categoryId, Pageable pageable) {
-        // Lấy danh sách ID danh mục và danh mục con
         List<Integer> categoryIds = categoryService.getCategoryAndSubcategoryIds(categoryId);
-        // Truy vấn sản phẩm dựa trên danh sách ID danh mục
         return productRepository.findByCategoryIdIn(categoryIds, pageable);
     }
 
-@Transactional
-public ProductResponse updateProduct(int productId, ProductRequest productRequest, List<MultipartFile> imageFiles)
-        throws IOException {
-    Product existingProduct = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+    @Transactional
+    public ProductResponse updateProduct(int productId, ProductRequest productRequest, List<MultipartFile> imageFiles)
+            throws IOException {
+        Product existingProduct = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
-    // Cập nhật thông tin cơ bản
-    existingProduct.setName(productRequest.getName());
-    existingProduct.setDescription(productRequest.getDescription());
-    existingProduct.setPrice(productRequest.getPrice());
-    existingProduct.setDiscountPercent(productRequest.getDiscount());
-    existingProduct.setDiscountedPrice(productRequest.getDiscountPrice());
-    existingProduct.setActive(true);
-    existingProduct.setDimensions(productRequest.getDimensions());
-    existingProduct.setSlug(productRequest.getSlug());
+        existingProduct.setName(productRequest.getName());
+        existingProduct.setDescription(productRequest.getDescription());
+        existingProduct.setPrice(productRequest.getPrice());
+        existingProduct.setDiscountPercent(productRequest.getDiscount());
+        existingProduct.setDiscountedPrice(productRequest.getDiscountPrice());
+        existingProduct.setActive(true);
+        existingProduct.setDimensions(productRequest.getDimensions());
+        existingProduct.setSlug(productRequest.getSlug());
+        existingProduct.setUpdatedAt(LocalDateTime.now());
 
-    Category category = categoryRepository.findById(productRequest.getCategoryId())
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
-    existingProduct.setCategory(category);
+        Category category = categoryRepository.findById(productRequest.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
+        existingProduct.setCategory(category);
 
-    updateMaterials(existingProduct, productRequest.getMaterialIds());
-    updateImages(existingProduct, imageFiles, productRequest.getKeptImageUrls());
+        updateMaterials(existingProduct, productRequest.getMaterialIds());
+        updateImages(existingProduct, imageFiles, productRequest.getKeptImageUrls());
 
-    return convertToResponse(existingProduct);
-}
+        return convertToResponse(existingProduct);
+    }
 
     private void updateMaterials(Product product, List<Integer> newMaterialIds) {
         List<ProductMaterial> existingLinks = productMaterialRepository.findByProductId(product.getId());
@@ -156,33 +162,36 @@ public ProductResponse updateProduct(int productId, ProductRequest productReques
     }
 
     private void updateImages(Product product, List<MultipartFile> imageFiles, List<String> keptImageUrls) throws IOException {
-    List<ProductImage> existingImages = product.getImages();
+        List<ProductImage> existingImages = product.getImages();
 
-    // Xóa những ảnh không nằm trong danh sách giữ lại
-    if (existingImages != null && keptImageUrls != null) {
-        Iterator<ProductImage> iterator = existingImages.iterator();
-        while (iterator.hasNext()) {
-            ProductImage pi = iterator.next();
-            if (!keptImageUrls.contains(pi.getImageUrl())) {
-                fileStorageService.deleteFile(pi.getImageUrl());
-                iterator.remove(); // JPA tự xóa nếu orphanRemoval=true
+        if (existingImages != null && keptImageUrls != null) {
+            Iterator<ProductImage> iterator = existingImages.iterator();
+            while (iterator.hasNext()) {
+                ProductImage pi = iterator.next();
+                if (!keptImageUrls.contains(pi.getImageUrl())) {
+                    fileStorageService.deleteFile(pi.getImageUrl());
+                    iterator.remove();
+                }
+            }
+        }
+
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            for (MultipartFile imageFile : imageFiles) {
+                if (imageFile != null && !imageFile.isEmpty()) {
+                    String fileName = fileStorageService.saveFile(imageFile);
+                    if (fileName != null) {
+                        ProductImage newImage = new ProductImage();
+                        newImage.setProduct(product);
+                        newImage.setImageUrl(fileName);
+                        newImage.setCreatedAt(LocalDateTime.now());
+                        String base64 = Base64.getEncoder().encodeToString(imageFile.getBytes());
+                        newImage.setImageBase64(base64);
+                        product.getImages().add(newImage);
+                    }
+                }
             }
         }
     }
-
-    // Thêm ảnh mới
-    if (imageFiles != null && !imageFiles.isEmpty()) {
-        for (MultipartFile imageFile : imageFiles) {
-            String fileName = fileStorageService.saveFile(imageFile);
-            if (fileName != null) {
-                ProductImage newImage = new ProductImage();
-                newImage.setProduct(product);
-                newImage.setImageUrl(fileName);
-                product.getImages().add(newImage); // Cascade persist
-            }
-        }
-    }
-}
 
     public ProductResponse convertToResponse(Product product) {
         ProductResponse response = new ProductResponse();
@@ -194,9 +203,19 @@ public ProductResponse updateProduct(int productId, ProductRequest productReques
         response.setDescription(product.getDescription());
         response.setDimensions(product.getDimensions());
 
-        List<String> imageUrls = productImageRepository.findByProductId(product.getId())
-                .stream().map(ProductImage::getImageUrl).toList();
+        List<ProductImage> productImages = productImageRepository.findByProductId(product.getId());
+        List<String> imageUrls = productImages.stream()
+                .map(ProductImage::getImageUrl)
+                .toList();
+        Map<String, String> imageBase64Map = productImages.stream()
+                .filter(pi -> pi.getImageBase64() != null)
+                .collect(Collectors.toMap(
+                        ProductImage::getImageUrl,
+                        ProductImage::getImageBase64,
+                        (existing, replacement) -> existing // Handle duplicates (unlikely)
+                ));
         response.setImageURLs(imageUrls);
+        response.setImageBase64Map(imageBase64Map);
 
         List<MaterialResponse> materialResponses = productMaterialRepository.findByProductId(product.getId())
                 .stream()
@@ -213,7 +232,7 @@ public ProductResponse updateProduct(int productId, ProductRequest productReques
             try {
                 fileStorageService.deleteFile(image.getImageUrl());
             } catch (IOException e) {
-                // Log lỗi nhưng không làm gián đoạn quá trình xóa
+                logger.warn("Failed to delete image file: {}", image.getImageUrl(), e);
             }
             productImageRepository.delete(image);
         }
@@ -246,9 +265,19 @@ public ProductResponse updateProduct(int productId, ProductRequest productReques
             productResponse.setImageURL("/images/" + primaryImage.getImageUrl());
         }
 
+        Map<String, String> imageBase64Map = productImages.stream()
+                .filter(pi -> pi.getImageBase64() != null)
+                .collect(Collectors.toMap(
+                        pi -> "/images/" + pi.getImageUrl(),
+                        ProductImage::getImageBase64,
+                        (existing, replacement) -> existing // Handle duplicates
+                ));
+
         for (ProductImage productImage : productImages) {
             productResponse.getImageURLs().add("/images/" + productImage.getImageUrl());
         }
+        productResponse.setImageBase64Map(imageBase64Map);
+
         List<ProductMaterial> productMaterials = productMaterialRepository.findByProductId(productId);
         List<MaterialResponse> materialResponses = new ArrayList<>();
 
@@ -287,8 +316,8 @@ public ProductResponse updateProduct(int productId, ProductRequest productReques
 
         if (maxPrice != null) {
             products = products.stream()
-                    .filter(p -> p.getDiscountedPrice().compareTo(maxPrice) <= 0)
-                    .collect(Collectors.toList());
+                .filter(p -> p.getDiscountedPrice().compareTo(maxPrice) <= 0)
+                .collect(Collectors.toList());
         }
         if (sort.equalsIgnoreCase("asc")) {
             products.sort(Comparator.comparing(Product::getDiscountedPrice));

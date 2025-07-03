@@ -25,9 +25,16 @@ public class ArticleService {
         this.fileStorageService = fileStorageService;
     }
 
-    public Page<Article> getAllArticles(Pageable pageable) {
+    public Page<Article> getAllArticles(Pageable pageable, String style) {
+    if (style == null || style.isEmpty()) {
         return articleRepository.findAll(pageable);
     }
+    try {
+        return articleRepository.findAllByTypeOrderByCreatedAtDesc(pageable, PostType.valueOf(style));
+    } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException("Loại bài viết không hợp lệ: " + style);
+    }
+}
 
     public Article createArticleFromDTO(ArticleRequest dto, MultipartFile imageFile) throws IOException {
     Article article = new Article();
@@ -57,33 +64,37 @@ public class ArticleService {
 }
 
     public Article updateArticle(int id, ArticleRequest dto, MultipartFile imageFile) throws IOException {
-        Article existingArticle = articleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết"));
+    Article existingArticle = articleRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết"));
 
-        existingArticle.setTitle(dto.getTitle());
-        existingArticle.setContent(dto.getContent());
-        existingArticle.setExcerpt(dto.getExcerpt());
-        existingArticle.setFeatured(dto.isFeatured());
+    existingArticle.setTitle(dto.getTitle());
+    existingArticle.setContent(dto.getContent());
+    existingArticle.setExcerpt(dto.getExcerpt());
+    existingArticle.setFeatured(dto.isFeatured());
 
-        try {
-            existingArticle.setType(PostType.valueOf(dto.getType()));
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Loại bài viết không hợp lệ");
-        }
-
-        if (imageFile != null && !imageFile.isEmpty()) {
-            // Xóa ảnh cũ nếu có
-            if (existingArticle.getFeaturedImageUrl() != null) {
-                fileStorageService.deleteFile(existingArticle.getFeaturedImageUrl());
-            }
-            // Lưu ảnh mới
-            String fileName = fileStorageService.saveFile(imageFile);
-            existingArticle.setFeaturedImageUrl(fileName);
-        }
-
-        existingArticle.setUpdatedAt(LocalDateTime.now());
-        return articleRepository.save(existingArticle);
+    try {
+        existingArticle.setType(PostType.valueOf(dto.getType()));
+    } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException("Loại bài viết không hợp lệ");
     }
+
+    if (imageFile != null && !imageFile.isEmpty()) {
+        // Xóa ảnh cũ nếu có
+        if (existingArticle.getFeaturedImageUrl() != null) {
+            fileStorageService.deleteFile(existingArticle.getFeaturedImageUrl());
+        }
+        // Lưu ảnh mới
+        String fileName = fileStorageService.saveFile(imageFile);
+        existingArticle.setFeaturedImageUrl(fileName);
+
+        // ✅ Lưu thêm ảnh dạng base64
+        String base64 = Base64.getEncoder().encodeToString(imageFile.getBytes());
+        existingArticle.setImageBase64(base64);
+    }
+
+    existingArticle.setUpdatedAt(LocalDateTime.now());
+    return articleRepository.save(existingArticle);
+}
 
     public void deleteArticle(int id) {
         Article article = articleRepository.findById(id)

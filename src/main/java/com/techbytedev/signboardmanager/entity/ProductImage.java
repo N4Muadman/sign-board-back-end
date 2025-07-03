@@ -20,6 +20,9 @@ public class ProductImage {
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
+    @Column(name = "image_base64", columnDefinition = "LONGTEXT")
+    private String imageBase64;
+
     @Column(name = "alt_text")
     private String altText;
 
@@ -44,8 +47,8 @@ public class ProductImage {
         return product;
     }
 
-    public void setProduct(Product products) {
-        this.product = products;
+    public void setProduct(Product product) {
+        this.product = product;
     }
 
     public String getImageUrl() {
@@ -54,6 +57,14 @@ public class ProductImage {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
     }
 
     public String getAltText() {

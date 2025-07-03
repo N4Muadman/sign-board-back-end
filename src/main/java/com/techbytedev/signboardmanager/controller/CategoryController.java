@@ -1,6 +1,5 @@
 package com.techbytedev.signboardmanager.controller;
 
-
 import com.techbytedev.signboardmanager.dto.response.ProductDTO;
 import com.techbytedev.signboardmanager.dto.response.ProductImageDTO;
 import com.techbytedev.signboardmanager.entity.Category;
@@ -110,6 +109,10 @@ public class CategoryController {
                         ProductImageDTO imageDTO = new ProductImageDTO();
                         imageDTO.setId(image.getId());
                         imageDTO.setImageUrl(image.getImageUrl());
+                        imageDTO.setImageBase64(image.getImageBase64());
+
+                        // Đồng thời thêm vào imageBase64Map
+                        dto.getImageBase64Map().put(image.getImageUrl(), image.getImageBase64());
                         return imageDTO;
                     })
                     .collect(Collectors.toList());
