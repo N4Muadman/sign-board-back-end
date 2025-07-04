@@ -95,4 +95,14 @@ public class ArticleController {
         }
         return ResponseEntity.ok(articles);
     }
+
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Article> getArticleById(@PathVariable int id) {
+        Article article = articleService.getArticleById(id);
+        if (article == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(article);
+    }
 }

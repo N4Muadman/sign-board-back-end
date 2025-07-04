@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface InquiryRepository extends JpaRepository<Inquiry, Integer> {
     Page<Inquiry> findAll(Pageable pageable);
+    void deleteByProductId(Long productId);
+
 }

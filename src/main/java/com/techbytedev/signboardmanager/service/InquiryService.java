@@ -12,9 +12,7 @@ import com.techbytedev.signboardmanager.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,22 +30,26 @@ public class InquiryService {
     private final InquiryRepository inquiryRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final EmailService emailService; // Thêm EmailService
+    private final EmailService emailService;
     private final UserService userService;
 
-    public InquiryService(InquiryRepository inquiryRepository, UserRepository userRepository, 
-                         ProductRepository productRepository, EmailService emailService, UserService userService) {
+    public InquiryService(InquiryRepository inquiryRepository, UserRepository userRepository,
+            ProductRepository productRepository, EmailService emailService, UserService userService) {
         this.inquiryRepository = inquiryRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
-        this.emailService = emailService; // Khởi tạo EmailService
+        this.emailService = emailService;
         this.userService = userService;
     }
 
     public InquiryResponse createInquiry(InquiryRequest request) {
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-        logger.info("Creating inquiry for product: {}", product.getName()); 
+        Product product = null;
+        if (request.getProductId() != null) {
+            product = productRepository.findById(request.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Product with ID " + request.getProductId() + " not found."));
+        }
+
+        logger.info("Creating inquiry for product: {}", product != null ? product.getName() : "No product");
         Inquiry inquiry = new Inquiry();
         inquiry.setName(request.getName());
         inquiry.setPhone(request.getPhone());
@@ -59,7 +61,6 @@ public class InquiryService {
         inquiry.setCreatedAt(LocalDateTime.now());
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
         if (authentication != null && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             String username = authentication.getName();
@@ -71,26 +72,12 @@ public class InquiryService {
         }
 
         Inquiry saved = inquiryRepository.save(inquiry);
-
-        // Gửi email thông báo đến admin
         sendEmailToAdmins(saved, product);
 
-        InquiryResponse response = new InquiryResponse();
-        response.setId(saved.getInquiryId());
-        response.setName(saved.getName());
-        response.setPhone(saved.getPhone());
-        response.setEmail(saved.getEmail());
-        response.setAddress(saved.getAddress());
-        response.setMessage(saved.getMessage());
-        response.setCreatedAt(saved.getCreatedAt());
-        response.setProductName(product.getName());
-        response.setStatus(saved.getStatus() != null ? saved.getStatus() : "NOCONTACT");
-
-        return response;
+        return convertToResponse(saved);
     }
 
     private void sendEmailToAdmins(Inquiry inquiry, Product product) {
-       // Tìm tất cả admin
         Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
         Page<UserResponse> adminUsers = userService.searchUsers(null, "admin@hotrodoan.vn", null, true, pageable);
         List<String> adminEmails = adminUsers.getContent().stream()
@@ -98,30 +85,27 @@ public class InquiryService {
                 .filter(email -> email != null && !email.equals("N/A"))
                 .collect(Collectors.toList());
 
-        // Định dạng thời gian gửi
         String submissionTime = inquiry.getCreatedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
 
-        // Gửi email đến từng admin
         for (String adminEmail : adminEmails) {
             String emailContent = String.format(
-                "<h3>Thông báo: Liên hệ mới được gửi</h3>" +
-                "<p><strong>ID liên hệ:</strong> %d</p>" +
-                "<p><strong>Người gửi:</strong> %s</p>" +
-                "<p><strong>Email:</strong> %s</p>" +
-                "<p><strong>Số điện thoại:</strong> %s</p>" +
-                "<p><strong>Địa chỉ:</strong> %s</p>" +
-                "<p><strong>Thời gian gửi:</strong> %s</p>" +
-                "<p><strong>Sản phẩm:</strong> %s</p>" +
-                "<p><strong>Nội dung:</strong> %s</p>",
-                inquiry.getInquiryId(),
-                inquiry.getName(),
-                inquiry.getEmail() != null ? inquiry.getEmail() : "Không có email",
-                inquiry.getPhone() != null ? inquiry.getPhone() : "Không có số điện thoại",
-                inquiry.getAddress() != null ? inquiry.getAddress() : "Không có địa chỉ",
-                submissionTime,
-                product.getName(),
-                inquiry.getMessage() != null ? inquiry.getMessage() : "Không có nội dung"
-            );
+                    "<h3>Thông báo: Liên hệ mới được gửi</h3>" +
+                            "<p><strong>ID liên hệ:</strong> %d</p>" +
+                            "<p><strong>Người gửi:</strong> %s</p>" +
+                            "<p><strong>Email:</strong> %s</p>" +
+                            "<p><strong>Số điện thoại:</strong> %s</p>" +
+                            "<p><strong>Địa chỉ:</strong> %s</p>" +
+                            "<p><strong>Thời gian gửi:</strong> %s</p>" +
+                            "<p><strong>Sản phẩm:</strong> %s</p>" +
+                            "<p><strong>Nội dung:</strong> %s</p>",
+                    inquiry.getInquiryId(),
+                    inquiry.getName(),
+                    inquiry.getEmail() != null ? inquiry.getEmail() : "Không có email",
+                    inquiry.getPhone() != null ? inquiry.getPhone() : "Không có số điện thoại",
+                    inquiry.getAddress() != null ? inquiry.getAddress() : "Không có địa chỉ",
+                    submissionTime,
+                    product != null ? product.getName() : "Liên hệ để nhận ưu đãi",
+                    inquiry.getMessage() != null ? inquiry.getMessage() : "Không có nội dung");
 
             try {
                 emailService.sendEmail(adminEmail, "Thông báo liên hệ mới", emailContent, null);
@@ -154,6 +138,43 @@ public class InquiryService {
     }
 
     public Page<Inquiry> getAllInquiries(Pageable pageable) {
-        return inquiryRepository.findAll(pageable);
+        Page<Inquiry> page = inquiryRepository.findAll(pageable);
+
+        // Lọc ra các bản ghi có productId không hợp lệ (productId không null nhưng không tồn tại)
+        List<Inquiry> orphanInquiries = page.getContent().stream()
+                .filter(i -> i.getProduct() != null && !productRepository.existsById(i.getProduct().getId()))
+                .collect(Collectors.toList());
+
+        if (!orphanInquiries.isEmpty()) {
+            inquiryRepository.deleteAll(orphanInquiries);
+            logger.warn("Đã xóa {} inquiry có product không hợp lệ.", orphanInquiries.size());
+        }
+
+        // Lọc các inquiry hợp lệ (product null hoặc product tồn tại)
+        List<Inquiry> validInquiries = page.getContent().stream()
+                .filter(i -> i.getProduct() == null || productRepository.existsById(i.getProduct().getId()))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(validInquiries, pageable, validInquiries.size());
+    }
+
+    public InquiryResponse getInquiryById(Integer id) {
+        Inquiry inquiry = inquiryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy inquiry với ID " + id));
+        return convertToResponse(inquiry);
+    }
+
+    // Hàm tiện ích: Lấy các inquiry không hợp lệ
+    public List<Inquiry> getInvalidInquiries() {
+        return inquiryRepository.findAll().stream()
+                .filter(i -> i.getProduct() != null && !productRepository.existsById(i.getProduct().getId()))
+                .collect(Collectors.toList());
+    }
+
+    // Hàm tiện ích: Xóa các inquiry không hợp lệ
+    public int cleanInvalidInquiries() {
+        List<Inquiry> invalid = getInvalidInquiries();
+        inquiryRepository.deleteAll(invalid);
+        return invalid.size();
     }
 }

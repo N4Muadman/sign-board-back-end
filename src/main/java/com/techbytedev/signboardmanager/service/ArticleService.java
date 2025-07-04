@@ -145,4 +145,9 @@ public class ArticleService {
         }
         return articles;
     }
+
+    public Article getArticleById(int id) {
+        return articleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết với ID: " + id));
+    }
 }

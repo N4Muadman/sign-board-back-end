@@ -3,6 +3,9 @@ package com.techbytedev.signboardmanager.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 @Entity
 @Table(name = "inquiries")
 public class Inquiry {
@@ -30,9 +33,11 @@ public class Inquiry {
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "product_id", nullable = false)
+@org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
+private Product product;
+
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

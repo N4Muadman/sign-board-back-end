@@ -529,6 +529,8 @@ public ResponseEntity<ProductResponse> updateProduct(
         inquiryService.updateInquiryStatus(id, status);
         return ResponseEntity.ok("Cập nhật trạng thái thành công.");
     }
+
+    
 }
 
 record FeedbackRequest(String feedback) {}
