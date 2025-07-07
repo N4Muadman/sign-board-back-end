@@ -1,13 +1,18 @@
 package com.techbytedev.signboardmanager.service;
 
+import com.techbytedev.signboardmanager.dto.request.BannerRequest;
 import com.techbytedev.signboardmanager.entity.Banner;
 import com.techbytedev.signboardmanager.entity.Product;
 import com.techbytedev.signboardmanager.repository.BannerRepository;
 import com.techbytedev.signboardmanager.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,10 +26,23 @@ public class BannerService {
         return bannerRepository.findById(id);
     }
 
-    @Transactional
-    public Banner createBanner(Banner banner) {
-        return bannerRepository.save(banner);
+@Transactional
+public Banner createBannerFromRequest(BannerRequest bannerRequest) {
+    Banner banner = new Banner();
+    banner.setTitle(bannerRequest.getTitle());
+    banner.setDescription(bannerRequest.getDescription());
+    banner.setActive(bannerRequest.isActive());
+
+    try {
+        byte[] imageBytes = bannerRequest.getImage().getBytes();
+        String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+        banner.setImageBase64(base64Image);
+    } catch (Exception e) {
+        throw new RuntimeException("Failed to convert image to Base64", e);
     }
+
+    return bannerRepository.save(banner);
+}
 
     @Transactional
     public Banner updateBanner(Long id, Banner bannerDetails) {
@@ -41,13 +59,23 @@ public class BannerService {
 
     @Transactional
     public void deleteBanner(Long id) {
-        Banner existingBanner = bannerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Banner not found with id: " + id));
-        bannerRepository.delete(existingBanner);
+        try
+        {
+            Banner banner = bannerRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Banner not found with id: " + id));
+            bannerRepository.delete(banner);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Banner not found with id: " + id, e);
+        }
+
+                
+               
+        
     }
-    public List<Banner> getAllBanners() {
-        return bannerRepository.findAll();
-    }
+
+    public Page<Banner> getAllBanners(Pageable pageable) {
+    return bannerRepository.findAll(pageable);
+}
 
    
 }

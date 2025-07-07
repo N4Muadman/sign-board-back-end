@@ -2,14 +2,21 @@ package com.techbytedev.signboardmanager.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.techbytedev.signboardmanager.dto.request.BannerRequest;
 import com.techbytedev.signboardmanager.entity.Banner;
 import com.techbytedev.signboardmanager.service.BannerService;
 
@@ -25,10 +32,11 @@ public class BannerController {
     }
 
     //get all banners
-    @GetMapping
-    public List<Banner> getAllBanners() {
-        return bannerService.getAllBanners();
-    }
+ @GetMapping
+public Page<Banner> getAllBanners(
+        @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+    return bannerService.getAllBanners(pageable);
+}
 
     //get banner by id
     @GetMapping("/{id}")
@@ -38,9 +46,10 @@ public class BannerController {
     }
 
     //create banner
-@PostMapping
-    public Banner createBanner(@RequestBody Banner banner) {
-        return bannerService.createBanner(banner);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Banner> createBanner(@ModelAttribute BannerRequest bannerRequest) {
+        Banner banner = bannerService.createBannerFromRequest(bannerRequest);
+        return ResponseEntity.ok(banner);
     }
 
     //update banner
