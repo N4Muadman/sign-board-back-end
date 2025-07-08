@@ -125,7 +125,7 @@ public class ProductService {
         existingProduct.setDimensions(productRequest.getDimensions());
         existingProduct.setSlug(productRequest.getSlug());
         existingProduct.setUpdatedAt(LocalDateTime.now());
-
+                logger.info("keptImageUrls: {}", productRequest.getKeptImageUrls());
         Category category = categoryRepository.findById(productRequest.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
         existingProduct.setCategory(category);
