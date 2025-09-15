@@ -30,7 +30,6 @@ public class ProductImage {
     private int sortOrder;
 
     @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;
 
     public int getId() {

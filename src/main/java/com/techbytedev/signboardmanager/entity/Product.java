@@ -6,6 +6,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -15,7 +16,7 @@ public class Product {
     private int id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "category_id", nullable = false, referencedColumnName = "category_id")
+    @JoinColumn(name = "category_id", nullable = false, referencedColumnName = "id")
     @JsonBackReference
     private Category category;
 
@@ -50,16 +51,24 @@ public class Product {
     private boolean isActive = true;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime updatedAt;
 
     @Column
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime deletedAt;
+
+    @OneToMany(mappedBy = "product", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    private List<ProductImage> images;
+
+    public List<ProductImage> getImages() {
+        return images;
+    }
+
+    public void setImages(List<ProductImage> images) {
+        this.images = images;
+    }
 
     public int getId() {
         return id;

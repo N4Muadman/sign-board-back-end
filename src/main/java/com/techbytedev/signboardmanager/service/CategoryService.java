@@ -1,10 +1,10 @@
 package com.techbytedev.signboardmanager.service;
 
 import com.techbytedev.signboardmanager.entity.Category;
-import com.techbytedev.signboardmanager.entity.Product;
 import com.techbytedev.signboardmanager.repository.CategoryRepository;
 import com.techbytedev.signboardmanager.repository.ProductRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,11 +12,16 @@ import java.util.List;
 
 @Service
 public class CategoryService {
-    @Autowired
-    private CategoryRepository categoryRepository;
 
-    @Autowired
-    private ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+
+
+    private final ProductRepository productRepository;
+
+    public CategoryService(CategoryRepository categoryRepository, ProductRepository productRepository) {
+        this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
+    }
 
     public Category getCategoryById(int id) {
         return categoryRepository.findById( id)
@@ -25,15 +30,26 @@ public class CategoryService {
 
     // lấy danh sách danh mục
     @Transactional
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public Page<Category> getAllCategories(Pageable pageable) {
+        return categoryRepository.findAll(pageable);
     }
 
     // Lấy danh mục cha
     public List<Category> getParentCategories() {
-        return categoryRepository.findByParentCategoryIdIsNull();
-    }
+        List<Category> categories = categoryRepository.findByParentCategoryIdIsNull();
+        for (Category category : categories) {
+            if (category.getImageURL() != null) {
+                category.setImageURL("/images/" + category.getImageURL());
+            }
 
+            for (Category childCategory : category.getChildCategories()) {
+                if (childCategory.getImageURL() != null) {
+                    childCategory.setImageURL("/images/" + childCategory.getImageURL());
+                }
+            }
+        }
+        return categories;
+    }
     // Lấy danh mục con theo danh mục cha
     public List<Category> getChildCategories(int parentCategoryId) {
         Category parentCategory = getCategoryById(parentCategoryId);
