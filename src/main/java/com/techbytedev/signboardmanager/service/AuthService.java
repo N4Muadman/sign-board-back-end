@@ -89,15 +89,37 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(AuthRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-        String username = authentication.getName();
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-        String jwt = jwtUtil.generateToken(user);
-        AuthResponse response = new AuthResponse(jwt);
-        response.setUser(userService.convertToResponse(user));
-        return response;
+        System.out.println(">>>>>>>> AuthService.login called");
+        System.out.println(">>>>>>>> Username: " + request.getUsername());
+        System.out.println(">>>>>>>> Password provided: " + (request.getPassword() != null ? "[PROVIDED]" : "[NULL]"));
+
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+            System.out.println(">>>>>>>> Authentication successful for user: " + authentication.getName());
+
+            String username = authentication.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+
+            System.out.println(">>>>>>>> User found in database: " + user.getUsername());
+            System.out.println(">>>>>>>> User role: " + user.getRole().getName());
+
+            String jwt = jwtUtil.generateToken(user);
+            AuthResponse response = new AuthResponse(jwt);
+            response.setUser(userService.convertToResponse(user));
+
+            System.out.println(">>>>>>>> Login successful, JWT generated");
+            return response;
+
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            System.out.println(">>>>>>>> BadCredentialsException: " + e.getMessage());
+            System.out.println(">>>>>>>> This means either username doesn't exist or password is wrong");
+            throw e;
+        } catch (Exception e) {
+            System.out.println(">>>>>>>> Other authentication error: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            throw e;
+        }
     }
 
     public void forgotPassword(String email) throws MessagingException {

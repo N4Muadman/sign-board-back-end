@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -54,16 +55,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            logger.debug("User Details: {}", userDetails);
-            if (jwtUtil.validateToken(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                logger.debug("Authentication set for user: {}", username);
-            } else {
-                logger.warn("Token validation failed for username: {}", username);
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                logger.debug("User Details: {}", userDetails);
+                if (jwtUtil.validateToken(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    logger.debug("Authentication set for user: {}", username);
+                } else {
+                    logger.warn("Token validation failed for username: {}", username);
+                }
+            } catch (UsernameNotFoundException e) {
+                logger.warn("User not found for username: {}, clearing security context", username);
+                SecurityContextHolder.clearContext();
+            } catch (Exception e) {
+                logger.error("Error during JWT authentication for username: {}", username, e);
+                SecurityContextHolder.clearContext();
             }
         } else {
             logger.debug("No username or authentication already set");
