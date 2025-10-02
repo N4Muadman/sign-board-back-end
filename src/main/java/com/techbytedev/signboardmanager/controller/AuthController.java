@@ -7,11 +7,15 @@ import com.techbytedev.signboardmanager.dto.response.AuthResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.service.AuthService;
 import jakarta.mail.MessagingException;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -27,6 +31,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
+         String password = "password";
+        String hashedPassword = new BCryptPasswordEncoder().encode(password);
+        log.info("Hashed Password: {}", hashedPassword);    
         return ResponseEntity.ok(authService.login(request));
     }
 

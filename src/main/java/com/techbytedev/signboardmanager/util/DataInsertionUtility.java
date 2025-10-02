@@ -266,18 +266,41 @@ public class DataInsertionUtility implements CommandLineRunner {
                         "('GUEST', 'Guest user with minimal access', true, NOW(), NOW())");
 
                 // =============================================
-                // STEP 3: USERS (After roles)
+                // STEP 2.5: ROLE-PERMISSIONS (After roles, before users)
                 // =============================================
-                logger.info("Inserting users...");
+                logger.info("Inserting role-permission relationships...");
+
+                // ADMIN Role - Full access to all permissions
+                executeInsert(statement, "INSERT INTO role_permissions (role_id, permission_id, created_at, updated_at) " +
+                        "SELECT r.id, p.id, NOW(), NOW() FROM roles r, permissions p WHERE r.name = 'ADMIN'");
+
+                // MANAGER Role - Limited administrative access
+                executeInsert(statement, "INSERT INTO role_permissions (role_id, permission_id, created_at, updated_at) " +
+                        "SELECT r.id, p.id, NOW(), NOW() FROM roles r, permissions p WHERE r.name = 'MANAGER' " +
+                        "AND p.module NOT IN ('PERMISSION', 'SITE_SETTING', 'USER_ADMIN', 'ROLE_ADMIN')");
+
+                // USER Role - Basic user access
+                executeInsert(statement, "INSERT INTO role_permissions (role_id, permission_id, created_at, updated_at) " +
+                        "SELECT r.id, p.id, NOW(), NOW() FROM roles r, permissions p WHERE r.name = 'USER' " +
+                        "AND p.module IN ('PRODUCT', 'WISHLIST', 'CONTACT')");
+
+                // GUEST Role - Minimal access
+                executeInsert(statement, "INSERT INTO role_permissions (role_id, permission_id, created_at, updated_at) " +
+                        "SELECT r.id, p.id, NOW(), NOW() FROM roles r, permissions p WHERE r.name = 'GUEST' " +
+                        "AND p.name IN ('PRODUCT_LIST', 'PRODUCT_READ', 'CATEGORY_LIST', 'CATEGORY_READ', 'CONTACT_CREATE')");
+
+                // =============================================
+                // STEP 3: USERS (After roles and role-permissions)
+                // =============================================
 
                 executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email, password_hash, full_name, phone_number, address, is_active, email_verified_at, remember_token, created_at, updated_at) VALUES " +
-    "(2, 'ADMIN', 'admin_signboard', 'admin@signboard.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi', 'Administrator SignBoard', '+84901234567', '123 Admin Street, Ho Chi Minh City', true, NOW(), NULL, NOW(), NOW())");
+    "(2, 'ADMIN', 'admin_signboard', 'admin@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Administrator SignBoard', '+84901234567', '123 Admin Street, Ho Chi Minh City', true, NOW(), NULL, NOW(), NOW())");
 executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email, password_hash, full_name, phone_number, address, is_active, email_verified_at, remember_token, created_at, updated_at) VALUES " +
-    "(4, 'USER', 'user_test_1', 'user1.test@signboard.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi', 'Test User One', '+1234567892', '123 Test User Ave, Test City, TC 12345', true, NOW(), NULL, NOW(), NOW())");
+    "(4, 'USER', 'user_test_1', 'user1.test@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Test User One', '+1234567892', '123 Test User Ave, Test City, TC 12345', true, NOW(), NULL, NOW(), NOW())");
 executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email, password_hash, full_name, phone_number, address, is_active, email_verified_at, remember_token, created_at, updated_at) VALUES " +
-    "(4, 'USER', 'user_test_2', 'user2.test@signboard.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi', 'Test User Two', '+1234567893', '321 Test User Ave, Test City, TC 12345', true, NOW(), NULL, NOW(), NOW())");
+    "(4, 'USER', 'user_test_2', 'user2.test@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Test User Two', '+1234567893', '321 Test User Ave, Test City, TC 12345', true, NOW(), NULL, NOW(), NOW())");
 executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email, password_hash, full_name, phone_number, address, is_active, email_verified_at, remember_token, created_at, updated_at) VALUES " +
-    "(4, 'USER', 'user_test_3', 'user3.test@signboard.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi', 'Test User Three', '+1234567894', '456 Test User Ave, Test City, TC 12345', true, NOW(), NULL, NOW(), NOW())");
+    "(4, 'USER', 'user_test_3', 'user3.test@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Test User Three', '+1234567894', '456 Test User Ave, Test City, TC 12345', true, NOW(), NULL, NOW(), NOW())");
 
                 // =============================================
                 // STEP 4: CATEGORIES
