@@ -20,10 +20,10 @@ public class Category {
     @Column(name = "id")
     private int id;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
-    @Column(name = "slug", nullable = false)
+    @Column(name = "slug")
     private String slug;
 
     @Column(name = "description")
@@ -33,7 +33,7 @@ public class Category {
     private String imageURL;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "parent_category_id", referencedColumnName = "id", nullable = true)
+    @JoinColumn(name = "parent_category_id", referencedColumnName = "id")
     @JsonBackReference
     private Category parentCategory;
 
@@ -140,5 +140,16 @@ public class Category {
 
     public void setProducts(List<Product> products) {
         this.products = products;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

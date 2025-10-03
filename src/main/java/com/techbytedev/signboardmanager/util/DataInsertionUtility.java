@@ -125,9 +125,9 @@ public class DataInsertionUtility implements CommandLineRunner {
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('PRODUCT_READ', '/api/admin/product/{id}', 'GET', 'PRODUCT', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('PRODUCT_UPDATE', '/api/admin/product/create', 'PUT', 'PRODUCT', NOW(), NOW())");
+                    "('PRODUCT_UPDATE', '/api/admin/product/edit/{id}', 'PUT', 'PRODUCT', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('PRODUCT_DELETE', '/api/admin/product/create/{id}', 'DELETE', 'PRODUCT', NOW(), NOW())");
+                    "('PRODUCT_DELETE', '/api/admin/product/delete/{id}', 'DELETE', 'PRODUCT', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('PRODUCT_LIST', '/api/admin/product', 'GET', 'PRODUCT', NOW(), NOW())");
 
@@ -157,45 +157,41 @@ public class DataInsertionUtility implements CommandLineRunner {
 
                 // Banner Management
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('BANNER_CREATE', '/api/banners', 'POST', 'BANNER', NOW(), NOW())");
+                    "('BANNER_CREATE', '/api/admin/banners', 'POST', 'BANNER', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('BANNER_READ', '/api/banners/{id}', 'GET', 'BANNER', NOW(), NOW())");
+                    "('BANNER_READ', '/api/admin/banners/{id}', 'GET', 'BANNER', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('BANNER_UPDATE', '/api/banners/{id}', 'PUT', 'BANNER', NOW(), NOW())");
+                    "('BANNER_UPDATE', '/api/admin/banners/{id}', 'PUT', 'BANNER', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('BANNER_DELETE', '/api/banners/{id}', 'DELETE', 'BANNER', NOW(), NOW())");
+                    "('BANNER_DELETE', '/api/admin/banners/{id}', 'DELETE', 'BANNER', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('BANNER_LIST', '/api/banners', 'GET', 'BANNER', NOW(), NOW())");
+                    "('BANNER_LIST', '/api/admin/banners', 'GET', 'BANNER', NOW(), NOW())");
 
                 // Inquiry Management
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('INQUIRY_CREATE', '/api/admin/inquiry/create', 'POST', 'INQUIRY', NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('INQUIRY_READ', '/api/admin/inquiry/list/{id}', 'GET', 'INQUIRY', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('INQUIRY_UPDATE', '/api/admin/inquiry/edit/{id}', 'PUT', 'INQUIRY', NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('INQUIRY_DELETE', '/api/admin/inquiry/delete/{id}', 'DELETE', 'INQUIRY', NOW(), NOW())");
+                    "('INQUIRY_UPDATE', '/api/admin/inquiry/', 'PUT', 'INQUIRY', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('INQUIRY_LIST', '/api/admin/inquiry/list', 'GET', 'INQUIRY', NOW(), NOW())");
 
                 // Contact Management
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('CONTACT_CREATE', '/api/contacts', 'POST', 'CONTACT', NOW(), NOW())");
+                    "('CONTACT_CREATE', '/api/admin/contacts', 'POST', 'CONTACT', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('CONTACT_READ', '/api/contacts/{id}', 'GET', 'CONTACT', NOW(), NOW())");
+                    "('CONTACT_READ', '/api/admin/contacts/{id}', 'GET', 'CONTACT', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('CONTACT_UPDATE', '/api/contacts/{id}', 'PUT', 'CONTACT', NOW(), NOW())");
+                    "('CONTACT_UPDATE', '/api/admin/contacts/{id}', 'PUT', 'CONTACT', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('CONTACT_DELETE', '/api/contacts/{id}', 'DELETE', 'CONTACT', NOW(), NOW())");
+                    "('CONTACT_DELETE', '/api/admin/contacts/{id}', 'DELETE', 'CONTACT', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('CONTACT_LIST', '/api/contacts', 'GET', 'CONTACT', NOW(), NOW())");
+                    "('CONTACT_LIST', '/api/admin/contacts', 'GET', 'CONTACT', NOW(), NOW())");
 
                 // Design Template Management
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('DESIGN_TEMPLATE_CREATE', '/api/design-templates', 'POST', 'DESIGN_TEMPLATE', NOW(), NOW())");
+                    "('DESIGN_TEMPLATE_CREATE', '/api/admin/design-templates', 'POST', 'DESIGN_TEMPLATE', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('DESIGN_TEMPLATE_READ', '/api/design-templates/{id}', 'GET', 'DESIGN_TEMPLATE', NOW(), NOW())");
+                    "('DESIGN_TEMPLATE_READ', '/api/admin/design-templates/{id}', 'GET', 'DESIGN_TEMPLATE', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('DESIGN_TEMPLATE_UPDATE', '/api/design-templates/{id}', 'PUT', 'DESIGN_TEMPLATE', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +

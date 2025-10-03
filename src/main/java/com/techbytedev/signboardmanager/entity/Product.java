@@ -16,13 +16,13 @@ public class Product {
     private int id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "category_id", nullable = false, referencedColumnName = "id")
+    @JoinColumn(name = "category_id",  referencedColumnName = "id")
     private Category category;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
-    @Column(name = "slug", nullable = false, unique = true)
+    @Column(name = "slug",  unique = true)
     private String slug;
 
     @Column(name = "description", columnDefinition = "LONGTEXT")
@@ -31,22 +31,22 @@ public class Product {
     @Column(name = "dimensions")
     private String dimensions;
 
-    @Column(name = "price", precision = 15, scale = 2, nullable = false)
+    @Column(name = "price", precision = 15, scale = 2)
     private BigDecimal price;
 
     @Column(name = "discount_percent")
     private BigDecimal discountPercent;
 
-    @Column(name = "discounted_price", nullable = false)
+    @Column(name = "discounted_price")
     private BigDecimal discountedPrice;
 
     @Column(name = "sku", unique = true, length = 100)
     private String sku;
 
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Column( columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean isFeatured = false;
 
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @Column( columnDefinition = "BOOLEAN DEFAULT TRUE")
     private boolean isActive = true;
 
     @Column(nullable = false)
