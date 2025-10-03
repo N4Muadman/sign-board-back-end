@@ -74,6 +74,14 @@ public class User {
     }
 
     @PrePersist
+    public void prePersist() {
+        if (role == null && (roleName == null || roleName.isEmpty())) {
+            this.roleName = "USER";
+        } else if (role != null && (roleName == null || !role.getName().equals(roleName))) {
+            this.roleName = role.getName();
+        }
+    }
+
     @PreUpdate
     public void syncRoleName() {
         if (role != null && role.getName() != null && !role.getName().equals(roleName)) {

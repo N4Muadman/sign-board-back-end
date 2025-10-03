@@ -76,7 +76,7 @@ public class AuthService {
         user.setPhoneNumber(request.getPhoneNumber());
         user.setAddress(request.getAddress());
 
-        Role role = roleRepository.findByName("Customer")
+        Role role = roleRepository.findByName("USER")
                 .orElseThrow(() -> new IllegalArgumentException("Customer role not found"));
 
         user.setRole(role);

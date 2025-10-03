@@ -85,7 +85,7 @@ public class DataInsertionUtility implements CommandLineRunner {
 
                 // Role Management
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('ROLE_CREATE', '/api/roles', 'POST', 'ROLE', NOW(), NOW())");
+                    "('ROLE_CREATE', '/api/admin/roles', 'POST', 'ROLE', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('ROLE_READ', '/api/admin/roles/{id}', 'GET', 'ROLE', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
@@ -171,7 +171,7 @@ public class DataInsertionUtility implements CommandLineRunner {
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('INQUIRY_READ', '/api/admin/inquiry/list/{id}', 'GET', 'INQUIRY', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('INQUIRY_UPDATE', '/api/admin/inquiry/', 'PUT', 'INQUIRY', NOW(), NOW())");
+                    "('INQUIRY_UPDATE', '/api/admin/inquiry', 'PUT', 'INQUIRY', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('INQUIRY_LIST', '/api/admin/inquiry/list', 'GET', 'INQUIRY', NOW(), NOW())");
 
@@ -241,7 +241,7 @@ public class DataInsertionUtility implements CommandLineRunner {
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('PERMISSION_READ', '/api/admin/permissions/{id}', 'GET', 'PERMISSION', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
-                    "('PERMISSION_UPDATE', '/api/admin/permissions/{id}', 'PUT', 'PERMISSION', NOW(), NOW())");
+                    "('PERMISSION_UPDATE', '/api/admin/permissions', 'PUT', 'PERMISSION', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('PERMISSION_DELETE', '/api/admin/permissions/{id}', 'DELETE', 'PERMISSION', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
