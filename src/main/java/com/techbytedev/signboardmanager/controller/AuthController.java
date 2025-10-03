@@ -1,9 +1,11 @@
 package com.techbytedev.signboardmanager.controller;
 
 import com.techbytedev.signboardmanager.dto.request.AuthRequest;
+import com.techbytedev.signboardmanager.dto.request.RefreshTokenRequest;
 import com.techbytedev.signboardmanager.dto.request.RegisterRequest;
 import com.techbytedev.signboardmanager.dto.request.ResetPasswordRequest;
 import com.techbytedev.signboardmanager.dto.response.AuthResponse;
+import com.techbytedev.signboardmanager.dto.response.TokenRefreshResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.service.AuthService;
 import jakarta.mail.MessagingException;
@@ -54,6 +56,10 @@ public class AuthController {
             @RequestParam String email,
             @RequestParam String fullName) {
         return ResponseEntity.ok(authService.googleLogin(email, fullName));
+    }
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenRefreshResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refreshToken(request));
     }
 
     @GetMapping("/profile")

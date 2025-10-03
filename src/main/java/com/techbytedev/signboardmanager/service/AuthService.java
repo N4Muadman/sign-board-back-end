@@ -1,11 +1,14 @@
 package com.techbytedev.signboardmanager.service;
 
 import com.techbytedev.signboardmanager.dto.request.AuthRequest;
+import com.techbytedev.signboardmanager.dto.request.RefreshTokenRequest;
 import com.techbytedev.signboardmanager.dto.request.RegisterRequest;
 import com.techbytedev.signboardmanager.dto.request.ResetPasswordRequest;
 import com.techbytedev.signboardmanager.dto.response.AuthResponse;
+import com.techbytedev.signboardmanager.dto.response.TokenRefreshResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.PasswordResetToken;
+import com.techbytedev.signboardmanager.entity.RefreshToken;
 import com.techbytedev.signboardmanager.entity.Role;
 import com.techbytedev.signboardmanager.entity.User;
 import com.techbytedev.signboardmanager.repository.PasswordResetTokenRepository;
@@ -14,7 +17,6 @@ import com.techbytedev.signboardmanager.repository.UserRepository;
 import com.techbytedev.signboardmanager.util.JwtUtil;
 import jakarta.mail.MessagingException;
 
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -38,11 +40,12 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
     private final UserService userService;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthService(UserRepository userRepository, RoleRepository roleRepository,
             PasswordResetTokenRepository tokenRepository, PasswordEncoder passwordEncoder,
             JwtUtil jwtUtil, AuthenticationManager authenticationManager,
-            EmailService emailService, UserService userService) {
+            EmailService emailService, UserService userService, RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.tokenRepository = tokenRepository;
@@ -51,6 +54,7 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
         this.emailService = emailService;
         this.userService = userService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -82,44 +86,40 @@ public class AuthService {
         userRepository.save(user);
 
         String jwt = jwtUtil.generateToken(user);
-        AuthResponse response = new AuthResponse(jwt);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+        AuthResponse response = new AuthResponse(jwt, refreshToken.getToken());
         response.setUser(userService.convertToResponse(user));
         return response;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(AuthRequest request) {
-        System.out.println(">>>>>>>> AuthService.login called");
-        System.out.println(">>>>>>>> Username: " + request.getUsername());
-        System.out.println(">>>>>>>> Password provided: " + (request.getPassword() != null ? "[PROVIDED]" : "[NULL]"));
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-            System.out.println(">>>>>>>> Authentication successful for user: " + authentication.getName());
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        String jwt = jwtUtil.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+        AuthResponse response = new AuthResponse(jwt, refreshToken.getToken());
+        response.setUser(userService.convertToResponse(user));
 
-            System.out.println(">>>>>>>> User found in database: " + user.getUsername());
-            System.out.println(">>>>>>>> User role: " + user.getRole().getName());
+        return response;
+    }
 
-            String jwt = jwtUtil.generateToken(user);
-            AuthResponse response = new AuthResponse(jwt);
-            response.setUser(userService.convertToResponse(user));
+    public TokenRefreshResponse refreshToken(RefreshTokenRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
 
-            System.out.println(">>>>>>>> Login successful, JWT generated");
-            return response;
-
-        } catch (org.springframework.security.authentication.BadCredentialsException e) {
-            System.out.println(">>>>>>>> BadCredentialsException: " + e.getMessage());
-            System.out.println(">>>>>>>> This means either username doesn't exist or password is wrong");
-            throw e;
-        } catch (Exception e) {
-            System.out.println(">>>>>>>> Other authentication error: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-            throw e;
-        }
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtUtil.generateToken(user);
+                    return new TokenRefreshResponse(token, requestRefreshToken);
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
 
     public void forgotPassword(String email) throws MessagingException {
@@ -156,7 +156,8 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found after Google login"));
         String jwt = jwtUtil.generateToken(user);
-        AuthResponse response = new AuthResponse(jwt);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+        AuthResponse response = new AuthResponse(jwt, refreshToken.getToken());
         response.setUser(userResponse);
         return response;
     }
@@ -169,9 +170,6 @@ public class AuthService {
 
     public UserResponse getProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println(">>>>>>>>authentication:            " + authentication);
-        System.out.println(">>>>>check: authentication # null: " + authentication != null);
-        System.out.println(("auth.name = "+ authentication.getName()));
         if (authentication != null && authentication.isAuthenticated()) {
             String username = authentication.getName();
 
