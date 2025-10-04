@@ -525,7 +525,7 @@ public ResponseEntity<ProductResponse> updateProduct(
         return ResponseEntity.ok(response);
     }
     @PutMapping("/inquiry/{id}/status")
-    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/inquiry/**', 'PUT')")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/inquiry/{id}/status', 'PUT')")
     public ResponseEntity<?> updateStatus(@PathVariable Integer id, @RequestParam String status) {
         inquiryService.updateInquiryStatus(id, status);
         return ResponseEntity.ok("Cập nhật trạng thái thành công.");

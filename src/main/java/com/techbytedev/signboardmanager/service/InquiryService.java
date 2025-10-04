@@ -132,10 +132,13 @@ public class InquiryService {
     }
 
     public void updateInquiryStatus(Integer id, String status) {
+        logger.info("Cập nhật trạng thái inquiry {} thành {}", id, status);
+
         Inquiry inquiry = inquiryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy inquiry"));
         inquiry.setStatus(status);
         inquiryRepository.save(inquiry);
+
     }
 
     public Page<Inquiry> getAllInquiries(Pageable pageable) {

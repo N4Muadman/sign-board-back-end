@@ -51,31 +51,37 @@ public class DataInsertionUtility implements CommandLineRunner {
             connection.setAutoCommit(false);
 
             try (Statement statement = connection.createStatement()) {
+                 var rs = statement.executeQuery("SELECT COUNT(*) FROM roles");
+    rs.next();
+    if (rs.getInt(1) > 0) {
+        logger.info("Database already seeded, skipping data insertion.");
+        return;
+    }
 
-                // =============================================
-                // STEP 0: CLEAN UP TABLES
-                // =============================================
-                logger.info("Disabling foreign key checks and cleaning tables...");
-                statement.execute("SET FOREIGN_KEY_CHECKS = 0;");
+                // // =============================================
+                // // STEP 0: CLEAN UP TABLES
+                // // =============================================
+                // logger.info("Disabling foreign key checks and cleaning tables...");
+                // statement.execute("SET FOREIGN_KEY_CHECKS = 0;");
 
-                statement.execute("TRUNCATE TABLE cms_articles;");
-                statement.execute("TRUNCATE TABLE banners;");
-                statement.execute("TRUNCATE TABLE site_settings;");
-                statement.execute("TRUNCATE TABLE design_templates;");
-                statement.execute("TRUNCATE TABLE inquiries;");
-                statement.execute("TRUNCATE TABLE product_materials;");
-                statement.execute("TRUNCATE TABLE product_images;");
-                statement.execute("TRUNCATE TABLE role_permissions;");
-                statement.execute("TRUNCATE TABLE users;");
-                statement.execute("TRUNCATE TABLE products;");
-                statement.execute("TRUNCATE TABLE materials;");
-                statement.execute("TRUNCATE TABLE product_categories;");
-                statement.execute("TRUNCATE TABLE roles;");
-                statement.execute("TRUNCATE TABLE permissions;");
-                statement.execute("TRUNCATE TABLE contact_submissions;");
+                // statement.execute("TRUNCATE TABLE cms_articles;");
+                // statement.execute("TRUNCATE TABLE banners;");
+                // statement.execute("TRUNCATE TABLE site_settings;");
+                // statement.execute("TRUNCATE TABLE design_templates;");
+                // statement.execute("TRUNCATE TABLE inquiries;");
+                // statement.execute("TRUNCATE TABLE product_materials;");
+                // statement.execute("TRUNCATE TABLE product_images;");
+                // statement.execute("TRUNCATE TABLE role_permissions;");
+                // statement.execute("TRUNCATE TABLE users;");
+                // statement.execute("TRUNCATE TABLE products;");
+                // statement.execute("TRUNCATE TABLE materials;");
+                // statement.execute("TRUNCATE TABLE product_categories;");
+                // statement.execute("TRUNCATE TABLE roles;");
+                // statement.execute("TRUNCATE TABLE permissions;");
+                // statement.execute("TRUNCATE TABLE contact_submissions;");
 
-                statement.execute("SET FOREIGN_KEY_CHECKS = 1;");
-                logger.info("Tables cleaned successfully.");
+                // statement.execute("SET FOREIGN_KEY_CHECKS = 1;");
+                // logger.info("Tables cleaned successfully.");
 
 
                 // =============================================
