@@ -9,11 +9,11 @@ public class UserDesignResponseDTO {
     private String designerEmail;
     private String designerPhoneNumber;
     private String description;
-
+    private String designImageBase64; // Add this line
 
     // Constructor
     public UserDesignResponseDTO(Long designId, String designImage, String designLink, String status,
-            String description, String designerFullName, String designerEmail, String designerPhoneNumber) {
+            String description, String designerFullName, String designerEmail, String designerPhoneNumber, String designImageBase64) {
         this.designId = designId;
         this.designImage = designImage;
         this.designLink = designLink;
@@ -22,6 +22,16 @@ public class UserDesignResponseDTO {
         this.designerEmail = designerEmail;
         this.designerPhoneNumber = designerPhoneNumber;
         this.description = description;
+        this.designImageBase64 = designImageBase64; // Add this line
+    }
+
+    // Getter and Setter for designImageBase64
+    public String getDesignImageBase64() {
+        return designImageBase64;
+    }
+
+    public void setDesignImageBase64(String designImageBase64) {
+        this.designImageBase64 = designImageBase64;
     }
 
     

@@ -90,7 +90,8 @@ public ResponseEntity<Page<UserDesignResponseDTO>> getAllUserDesigns(
                 userDesign.getDescription(),
                 user != null ? user.getFullName() : "Unknown",
                 user != null ? user.getEmail() : "Unknown",
-                user != null ? user.getPhoneNumber() : "Unknown"
+                user != null ? user.getPhoneNumber() : "Unknown",
+                userDesign.getDesignImageBase64()
         );
     });
 

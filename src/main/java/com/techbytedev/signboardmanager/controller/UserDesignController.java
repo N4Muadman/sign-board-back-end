@@ -3,6 +3,7 @@ package com.techbytedev.signboardmanager.controller;
 import com.techbytedev.signboardmanager.dto.response.UserDesignResponseDTO;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.User;
+import java.util.Base64;
 import com.techbytedev.signboardmanager.entity.UserDesign;
 import com.techbytedev.signboardmanager.service.EmailService;
 import com.techbytedev.signboardmanager.service.FileStorageService;
@@ -65,6 +66,7 @@ private final EmailService emailService; // Add EmailService
 
         if (designImage != null && !designImage.isEmpty()) {
             userDesign.setDesignImage(fileStorageService.saveFile(designImage));
+            userDesign.setDesignImageBase64("data:image/png;base64," + Base64.getEncoder().encodeToString(designImage.getBytes()));
             logger.info("Saved design image for userId: {}", userId);
         }
         if (designLink != null) {
@@ -149,7 +151,8 @@ private final EmailService emailService; // Add EmailService
                     userDesign.getDescription(),
                     user != null ? user.getFullName() : "Unknown",
                     user != null ? user.getEmail() : "Unknown",
-                    user != null ? user.getPhoneNumber() : "Unknown"
+                    user != null ? user.getPhoneNumber() : "Unknown",
+                    userDesign.getDesignImageBase64() // Add this line
             );
         });
 

@@ -23,6 +23,10 @@ public class UserDesign {
     @Column(name = "design_link")
     private String designLink;
 
+    @Lob
+    @Column(name = "design_image_base64", columnDefinition = "TEXT")
+    private String designImageBase64;
+
    @Column(columnDefinition = "MEDIUMTEXT",name = "description")// Thêm trường mô tả
     private String description;
 

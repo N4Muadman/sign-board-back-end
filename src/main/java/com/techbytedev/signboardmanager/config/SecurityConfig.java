@@ -3,6 +3,8 @@ package com.techbytedev.signboardmanager.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Value;
 import com.techbytedev.signboardmanager.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +38,7 @@ import java.util.Map;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOidcUserService customOidcUserService;
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
@@ -87,11 +90,12 @@ public class SecurityConfig {
                 )
                 .successHandler(customAuthenticationSuccessHandler)
                 .failureHandler((request, response, exception) -> {
-                    response.setContentType("application/json;charset=UTF-8"); // Đảm bảo UTF-8
-                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    logger.error("OAuth2 Login authentication failed", exception);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     Map<String, String> errorResponse = new HashMap<>();
                     errorResponse.put("error", "access_denied");
-                    errorResponse.put("message", "Bạn đã hủy đăng nhập bằng Google.");
+                    errorResponse.put("message", "Đăng nhập Google thất bại: " + exception.getLocalizedMessage());
                     new ObjectMapper().writeValue(response.getWriter(), errorResponse);
                 })
             )

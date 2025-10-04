@@ -129,8 +129,8 @@ public void deleteUser(Integer id) {
             throw new IllegalArgumentException("User is not an admin");
         }
 
-        Role customerRole = roleRepository.findByName("Customer")
-                .orElseThrow(() -> new IllegalArgumentException("Customer role not found"));
+        Role customerRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> new IllegalArgumentException("USER role not found"));
 
         user.setRole(customerRole);
         user.setUpdatedAt(LocalDateTime.now());
@@ -152,7 +152,7 @@ public void deleteUser(Integer id) {
             user.setCreatedAt(LocalDateTime.now());
             user.setUpdatedAt(LocalDateTime.now());
 
-            Role customerRole = roleRepository.findByName("Customer")
+            Role customerRole = roleRepository.findByName("USER")
                     .orElseThrow(() -> new IllegalArgumentException("Customer role not found"));
             user.setRole(customerRole);
 
@@ -175,7 +175,7 @@ public void deleteUser(Integer id) {
             user.setCreatedAt(LocalDateTime.now());
             user.setUpdatedAt(LocalDateTime.now());
 
-            Role customerRole = roleRepository.findByName("Customer")
+            Role customerRole = roleRepository.findByName("USER")
                     .orElseThrow(() -> new IllegalArgumentException("Customer role not found"));
             user.setRole(customerRole);
 
