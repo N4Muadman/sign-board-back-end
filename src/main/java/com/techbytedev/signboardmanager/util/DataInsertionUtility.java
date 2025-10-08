@@ -18,8 +18,8 @@ import java.sql.Statement;
  *
  * Run this class to insert:
  * - 70 permissions
- * - 4 roles
- * - 4 users
+ * - 2 roles (ADMIN, USER)
+ * - 2 users (admin, test user)
  * - 19 categories (9 main + 10 subcategories)
  * - 16 materials
  * - 45 products
@@ -161,6 +161,22 @@ public class DataInsertionUtility implements CommandLineRunner {
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('ARTICLE_LIST', '/api/admin/article', 'GET', 'ARTICLE', NOW(), NOW())");
 
+                // Article Category Management
+                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
+                    "('ARTICLE_CATEGORY_CREATE', '/api/admin/article-categories', 'POST', 'ARTICLE_CATEGORY', NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
+                    "('ARTICLE_CATEGORY_READ', '/api/admin/article-categories/{id}', 'GET', 'ARTICLE_CATEGORY', NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
+                    "('ARTICLE_CATEGORY_UPDATE', '/api/admin/article-categories/{id}', 'PUT', 'ARTICLE_CATEGORY', NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
+                    "('ARTICLE_CATEGORY_DELETE', '/api/admin/article-categories/{id}', 'DELETE', 'ARTICLE_CATEGORY', NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
+                    "('ARTICLE_CATEGORY_LIST', '/api/admin/article-categories', 'GET', 'ARTICLE_CATEGORY', NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
+                    "('ARTICLE_CATEGORY_TREE', '/api/admin/article-categories/tree', 'GET', 'ARTICLE_CATEGORY', NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
+                    "('ARTICLE_CATEGORY_SEARCH', '/api/admin/article-categories/search', 'GET', 'ARTICLE_CATEGORY', NOW(), NOW())");
+
                 // Banner Management
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('BANNER_CREATE', '/api/admin/banners', 'POST', 'BANNER', NOW(), NOW())");
@@ -261,11 +277,7 @@ public class DataInsertionUtility implements CommandLineRunner {
                 executeInsert(statement, "INSERT INTO roles (name, description, active, created_at, updated_at) VALUES " +
                         "('ADMIN', 'Administrator with most system access', true, NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO roles (name, description, active, created_at, updated_at) VALUES " +
-                        "('MANAGER', 'Manager with limited administrative access', true, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO roles (name, description, active, created_at, updated_at) VALUES " +
                         "('USER', 'Regular user with basic access', true, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO roles (name, description, active, created_at, updated_at) VALUES " +
-                        "('GUEST', 'Guest user with minimal access', true, NOW(), NOW())");
 
                 // =============================================
                 // STEP 2.5: ROLE-PERMISSIONS (After roles, before users)
@@ -276,33 +288,19 @@ public class DataInsertionUtility implements CommandLineRunner {
                 executeInsert(statement, "INSERT INTO role_permissions (role_id, permission_id, created_at, updated_at) " +
                         "SELECT r.id, p.id, NOW(), NOW() FROM roles r, permissions p WHERE r.name = 'ADMIN'");
 
-                // MANAGER Role - Limited administrative access
-                executeInsert(statement, "INSERT INTO role_permissions (role_id, permission_id, created_at, updated_at) " +
-                        "SELECT r.id, p.id, NOW(), NOW() FROM roles r, permissions p WHERE r.name = 'MANAGER' " +
-                        "AND p.module NOT IN ('PERMISSION', 'SITE_SETTING', 'USER_ADMIN', 'ROLE_ADMIN')");
-
                 // USER Role - Basic user access
                 executeInsert(statement, "INSERT INTO role_permissions (role_id, permission_id, created_at, updated_at) " +
                         "SELECT r.id, p.id, NOW(), NOW() FROM roles r, permissions p WHERE r.name = 'USER' " +
                         "AND p.module IN ('PRODUCT', 'WISHLIST', 'CONTACT')");
-
-                // GUEST Role - Minimal access
-                executeInsert(statement, "INSERT INTO role_permissions (role_id, permission_id, created_at, updated_at) " +
-                        "SELECT r.id, p.id, NOW(), NOW() FROM roles r, permissions p WHERE r.name = 'GUEST' " +
-                        "AND p.name IN ('PRODUCT_LIST', 'PRODUCT_READ', 'CATEGORY_LIST', 'CATEGORY_READ', 'CONTACT_CREATE')");
 
                 // =============================================
                 // STEP 3: USERS (After roles and role-permissions)
                 // =============================================
 
                 executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email, password_hash, full_name, phone_number, address, is_active, email_verified_at, remember_token, created_at, updated_at) VALUES " +
-    "(2, 'ADMIN', 'admin_signboard', 'admin@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Administrator SignBoard', '+84901234567', '123 Admin Street, Ho Chi Minh City', true, NOW(), NULL, NOW(), NOW())");
+    "(1, 'ADMIN', 'admin_signboard', 'admin@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Administrator SignBoard', '+84901234567', '123 Admin Street, Ho Chi Minh City', true, NOW(), NULL, NOW(), NOW())");
 executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email, password_hash, full_name, phone_number, address, is_active, email_verified_at, remember_token, created_at, updated_at) VALUES " +
-    "(4, 'USER', 'user_test_1', 'user1.test@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Test User One', '+1234567892', '123 Test User Ave, Test City, TC 12345', true, NOW(), NULL, NOW(), NOW())");
-executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email, password_hash, full_name, phone_number, address, is_active, email_verified_at, remember_token, created_at, updated_at) VALUES " +
-    "(4, 'USER', 'user_test_2', 'user2.test@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Test User Two', '+1234567893', '321 Test User Ave, Test City, TC 12345', true, NOW(), NULL, NOW(), NOW())");
-executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email, password_hash, full_name, phone_number, address, is_active, email_verified_at, remember_token, created_at, updated_at) VALUES " +
-    "(4, 'USER', 'user_test_3', 'user3.test@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Test User Three', '+1234567894', '456 Test User Ave, Test City, TC 12345', true, NOW(), NULL, NOW(), NOW())");
+    "(2, 'USER', 'user_test', 'user.test@signboard.com', '$2a$10$MfBD/gIsV/lzJerUdJQrq.p9Cw6bOWKGLHdFE/qCze4vzxJvaLIPe', 'Test User', '+1234567890', '123 Test Ave, Test City', true, NOW(), NULL, NOW(), NOW())");
 
                 // =============================================
                 // STEP 4: CATEGORIES
@@ -982,7 +980,56 @@ executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email
                 */
 
                 // =============================================
-                // STEP 15: ARTICLES
+                // STEP 15: ARTICLE CATEGORIES
+                // =============================================
+                logger.info("Inserting article categories...");
+
+                // Main Categories - Level 0 (Root categories)
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Tin tức công nghệ', 'tin-tuc-cong-nghe', 'Các tin tức mới nhất về công nghệ và kỹ thuật số', true, 0, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Hướng dẫn sử dụng', 'huong-dan-su-dung', 'Hướng dẫn chi tiết cách sử dụng các sản phẩm và dịch vụ', true, 0, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Thông báo', 'thong-bao', 'Các thông báo quan trọng từ công ty', true, 0, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Sự kiện', 'su-kien', 'Thông tin về các sự kiện và hoạt động của công ty', true, 0, 0, NOW(), NOW())");
+
+
+                // Subcategories - Level 1
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Công nghệ LED', 'cong-nghe-led', 'Tin tức về công nghệ đèn LED mới nhất', 1, true, 1, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Xu hướng thiết kế', 'xu-huong-thiet-ke', 'Các xu hướng thiết kế biển quảng cáo hiện đại', 1, true, 1, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Hướng dẫn lắp đặt', 'huong-dan-lap-dat', 'Hướng dẫn cách lắp đặt các loại biển quảng cáo', 2, true, 1, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Bảo trì và sửa chữa', 'bao-tri-sua-chua', 'Hướng dẫn bảo trì và khắc phục sự cố', 2, true, 1, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Cập nhật sản phẩm', 'cap-nhat-san-pham', 'Thông báo về các sản phẩm mới và cập nhật', 3, true, 1, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Thay đổi chính sách', 'thay-doi-chinh-sach', 'Thông báo về các thay đổi chính sách công ty', 3, true, 1, 0, NOW(), NOW())");
+
+
+                // Sub-subcategories - Level 2 (Maximum depth)
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('LED ma trận', 'led-ma-tran', 'Công nghệ LED ma trận cho biển quảng cáo động', 5, true, 2, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('LED chạy chữ', 'led-chay-chu', 'Công nghệ LED chạy chữ cho cửa hàng', 5, true, 2, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Thiết kế 3D', 'thiet-ke-3d', 'Xu hướng thiết kế 3D cho biển quảng cáo', 6, true, 2, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Minimalist design', 'minimalist-design', 'Phong cách thiết kế tối giản hiện đại', 6, true, 2, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Hướng dẫn lắp đặt LED', 'huong-dan-lap-dat-led', 'Hướng dẫn chi tiết lắp đặt biển LED', 7, true, 2, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Hướng dẫn lắp đặt neon', 'huong-dan-lap-dat-neon', 'Hướng dẫn lắp đặt biển neon an toàn', 7, true, 2, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Sửa chữa LED', 'sua-chua-led', 'Cách khắc phục sự cố biển LED thường gặp', 8, true, 2, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Bảo dưỡng neon', 'bao-duong-neon', 'Hướng dẫn bảo dưỡng biển neon định kỳ', 8, true, 2, 0, NOW(), NOW())");
+
+                // =============================================
+                // STEP 16: ARTICLES
                 // =============================================
                 /*
                 logger.info("Inserting articles...");

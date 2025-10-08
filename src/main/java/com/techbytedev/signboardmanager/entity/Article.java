@@ -44,6 +44,10 @@ public class Article {
     @Column(name = "image_base64", columnDefinition = "LONGTEXT")
     private String imageBase64;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "category_id")
+    private ArticleCategory category;
+
     public String getImageBase64() {
         return imageBase64;
     }
@@ -138,5 +142,13 @@ public class Article {
 
     public void setDeletedAt(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public ArticleCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(ArticleCategory category) {
+        this.category = category;
     }
 }
