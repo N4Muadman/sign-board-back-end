@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-
 @Repository
 public interface ArticleRepository extends JpaRepository<Article, Integer> {
     List<Article> findByTitleContainingOrContentContaining(String title, String content);
@@ -16,5 +15,7 @@ public interface ArticleRepository extends JpaRepository<Article, Integer> {
     List<Article> findByType(PostType type);
     List<Article> findByTypeOrderByCreatedAtDesc(PostType type);
     Page<Article> findAllByTypeOrderByCreatedAtDesc(Pageable pageable, PostType type);
+    List<Article> findByCategoryIdOrderByCreatedAtDesc(int categoryId);
     List<Article> findByCategoryId(int categoryId);
+    Article findBySlug(String slug);
 }

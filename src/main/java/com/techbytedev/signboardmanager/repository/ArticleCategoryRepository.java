@@ -26,6 +26,7 @@ public interface ArticleCategoryRepository extends JpaRepository<ArticleCategory
     @Query("SELECT ac FROM ArticleCategory ac WHERE ac.level > 0 AND ac.isActive = true ORDER BY ac.level, ac.parentCategory.id, ac.sortOrder, ac.name")
     List<ArticleCategory> findChildCategoriesOrdered();
 
-    @Query("SELECT ac FROM ArticleCategory ac WHERE ac.isActive = true ORDER BY ac.level, ac.parentCategory.id, ac.sortOrder, ac.name")
-    List<ArticleCategory> findAllOrderedByHierarchy();
+    ArticleCategory findBySlug(String slug);
+
+    ArticleCategory findBySlugAndIsActiveTrue(String slug);
 }

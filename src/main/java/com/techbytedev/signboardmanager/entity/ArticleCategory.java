@@ -59,9 +59,9 @@ public class ArticleCategory {
         updatedAt = LocalDateTime.now();
         if (parentCategory != null) {
             level = parentCategory.getLevel() + 1;
-            // Validate maximum depth (3 levels: 0, 1, 2)
-            if (level > 2) {
-                throw new IllegalArgumentException("Maximum category depth exceeded. Only 3 levels are allowed (0-2).");
+            // Validate maximum depth (2 levels: 0, 1)
+            if (level > 1) {
+                throw new IllegalArgumentException("Maximum category depth exceeded. Only 2 levels are allowed (0-1).");
             }
         } else {
             level = 0;
@@ -76,9 +76,9 @@ public class ArticleCategory {
         updatedAt = LocalDateTime.now();
         if (parentCategory != null) {
             level = parentCategory.getLevel() + 1;
-            // Validate maximum depth (3 levels: 0, 1, 2)
-            if (level > 2) {
-                throw new IllegalArgumentException("Maximum category depth exceeded. Only 3 levels are allowed (0-2).");
+            // Validate maximum depth (2 levels: 0, 1)
+            if (level > 1) {
+                throw new IllegalArgumentException("Maximum category depth exceeded. Only 2 levels are allowed (0-1).");
             }
         } else {
             level = 0;

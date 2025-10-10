@@ -10,7 +10,7 @@ public class ArticleRequest {
     private String content;
     private String excerpt;
     private boolean isFeatured;
-    private String type;
+    private Integer categoryId;
 
     public String getTitle() {
         return title;
@@ -20,9 +20,7 @@ public class ArticleRequest {
         this.title = title;
     }
 
-   
 
-    
 
     public String getContent() {
         return content;
@@ -48,11 +46,11 @@ public class ArticleRequest {
         isFeatured = featured;
     }
 
-    public String getType() {
-        return type;
+    public Integer getCategoryId() {
+        return categoryId;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setCategoryId(Integer categoryId) {
+        this.categoryId = categoryId;
     }
 }

@@ -34,8 +34,8 @@ public class ArticleCategoryService {
 
             // Validate maximum depth before creating
             int newLevel = parent.getLevel() + 1;
-            if (newLevel > 2) {
-                throw new IllegalArgumentException("Maximum category depth exceeded. Only 3 levels are allowed (0-2).");
+            if (newLevel > 1) {
+                throw new IllegalArgumentException("Maximum category depth exceeded. Only 2 levels are allowed (0-1).");
             }
 
             category.setParentCategory(parent);
@@ -58,8 +58,8 @@ public class ArticleCategoryService {
 
             // Validate maximum depth before updating
             int newLevel = parent.getLevel() + 1;
-            if (newLevel > 2) {
-                throw new IllegalArgumentException("Maximum category depth exceeded. Only 3 levels are allowed (0-2).");
+            if (newLevel > 1) {
+                throw new IllegalArgumentException("Maximum category depth exceeded. Only 2 levels are allowed (0-1).");
             }
 
             category.setParentCategory(parent);

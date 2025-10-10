@@ -985,48 +985,40 @@ executeInsert(statement, "INSERT INTO users (role_id, role_name, username, email
                 logger.info("Inserting article categories...");
 
                 // Main Categories - Level 0 (Root categories)
+                // Dịch vụ
                 executeInsert(statement, "INSERT INTO article_categories (name, slug, description, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Tin tức công nghệ', 'tin-tuc-cong-nghe', 'Các tin tức mới nhất về công nghệ và kỹ thuật số', true, 0, 0, NOW(), NOW())");
+                        "('Dịch vụ', 'dich-vu', 'Các dịch vụ về làm biển quảng cáo và thiết kế', true, 0, 0, NOW(), NOW())");
+                // Mẫu biển đẹp
                 executeInsert(statement, "INSERT INTO article_categories (name, slug, description, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Hướng dẫn sử dụng', 'huong-dan-su-dung', 'Hướng dẫn chi tiết cách sử dụng các sản phẩm và dịch vụ', true, 0, 0, NOW(), NOW())");
+                        "('Mẫu biển đẹp', 'mau-bien-dep', 'Các mẫu biển quảng cáo đẹp theo lĩnh vực', true, 0, 0, NOW(), NOW())");
+                // Mẫu chữ
                 executeInsert(statement, "INSERT INTO article_categories (name, slug, description, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Thông báo', 'thong-bao', 'Các thông báo quan trọng từ công ty', true, 0, 0, NOW(), NOW())");
+                        "('Mẫu chữ', 'mau-chu', 'Các mẫu chữ quảng cáo đẹp', true, 0, 0, NOW(), NOW())");
+                // Dự án
                 executeInsert(statement, "INSERT INTO article_categories (name, slug, description, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Sự kiện', 'su-kien', 'Thông tin về các sự kiện và hoạt động của công ty', true, 0, 0, NOW(), NOW())");
+                        "('Dự án', 'du-an', 'Các dự án đã thực hiện', true, 0, 0, NOW(), NOW())");
 
+                // Subcategories - Level 1 (Dịch vụ)
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Làm biển quảng cáo', 'lam-bien-quang-cao', 'Dịch vụ làm biển quảng cáo chuyên nghiệp', 1, true, 1, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Biển hộp đèn – Biển vẫy', 'bien-hop-den-bien-vay', 'Dịch vụ làm biển hộp đèn và biển vẫy', 1, true, 1, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Biển Led – màn hình Led', 'bien-led-man-hinh-led', 'Dịch vụ làm biển LED và màn hình LED', 1, true, 1, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Backrop Văn Phòng – Khách sạn', 'backrop-van-phong-khach-san', 'Dịch vụ làm backrop cho văn phòng và khách sạn', 1, true, 1, 0, NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
+                        "('Biển công ty – biển chức danh', 'bien-cong-ty-bien-chuc-danh', 'Dịch vụ làm biển công ty và biển chức danh', 1, true, 1, 0, NOW(), NOW())");
 
-                // Subcategories - Level 1
+                // Subcategories - Level 1 (Mẫu biển đẹp)
                 executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Công nghệ LED', 'cong-nghe-led', 'Tin tức về công nghệ đèn LED mới nhất', 1, true, 1, 0, NOW(), NOW())");
+                        "('Mẫu biển lĩnh vực ẩm thực', 'mau-bien-linh-vuc-am-thuc', 'Các mẫu biển đẹp cho lĩnh vực ẩm thực', 2, true, 1, 0, NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Xu hướng thiết kế', 'xu-huong-thiet-ke', 'Các xu hướng thiết kế biển quảng cáo hiện đại', 1, true, 1, 0, NOW(), NOW())");
+                        "('Mẫu biển lĩnh vực Spa', 'mau-bien-linh-vuc-spa', 'Các mẫu biển đẹp cho lĩnh vực Spa', 2, true, 1, 0, NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Hướng dẫn lắp đặt', 'huong-dan-lap-dat', 'Hướng dẫn cách lắp đặt các loại biển quảng cáo', 2, true, 1, 0, NOW(), NOW())");
+                        "('Mẫu biển lĩnh vực Sức khỏe', 'mau-bien-linh-vuc-suc-khoe', 'Các mẫu biển đẹp cho lĩnh vực sức khỏe', 2, true, 1, 0, NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Bảo trì và sửa chữa', 'bao-tri-sua-chua', 'Hướng dẫn bảo trì và khắc phục sự cố', 2, true, 1, 0, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Cập nhật sản phẩm', 'cap-nhat-san-pham', 'Thông báo về các sản phẩm mới và cập nhật', 3, true, 1, 0, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Thay đổi chính sách', 'thay-doi-chinh-sach', 'Thông báo về các thay đổi chính sách công ty', 3, true, 1, 0, NOW(), NOW())");
-
-
-                // Sub-subcategories - Level 2 (Maximum depth)
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('LED ma trận', 'led-ma-tran', 'Công nghệ LED ma trận cho biển quảng cáo động', 5, true, 2, 0, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('LED chạy chữ', 'led-chay-chu', 'Công nghệ LED chạy chữ cho cửa hàng', 5, true, 2, 0, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Thiết kế 3D', 'thiet-ke-3d', 'Xu hướng thiết kế 3D cho biển quảng cáo', 6, true, 2, 0, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Minimalist design', 'minimalist-design', 'Phong cách thiết kế tối giản hiện đại', 6, true, 2, 0, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Hướng dẫn lắp đặt LED', 'huong-dan-lap-dat-led', 'Hướng dẫn chi tiết lắp đặt biển LED', 7, true, 2, 0, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Hướng dẫn lắp đặt neon', 'huong-dan-lap-dat-neon', 'Hướng dẫn lắp đặt biển neon an toàn', 7, true, 2, 0, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Sửa chữa LED', 'sua-chua-led', 'Cách khắc phục sự cố biển LED thường gặp', 8, true, 2, 0, NOW(), NOW())");
-                executeInsert(statement, "INSERT INTO article_categories (name, slug, description, parent_id, is_active, level, sort_order, created_at, updated_at) VALUES " +
-                        "('Bảo dưỡng neon', 'bao-duong-neon', 'Hướng dẫn bảo dưỡng biển neon định kỳ', 8, true, 2, 0, NOW(), NOW())");
+                        "('Mẫu biển lĩnh vực Khác', 'mau-bien-linh-vuc-khac', 'Các mẫu biển đẹp cho các lĩnh vực khác', 2, true, 1, 0, NOW(), NOW())");
 
                 // =============================================
                 // STEP 16: ARTICLES

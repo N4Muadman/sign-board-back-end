@@ -105,4 +105,36 @@ public class ArticleController {
         }
         return ResponseEntity.ok(article);
     }
+
+    // API lấy bài viết theo slug
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<Article> getArticleBySlug(@PathVariable String slug) {
+        Article article = articleService.getArticleBySlug(slug);
+        if (article == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(article);
+    }
+
+    // API động để lấy bài viết theo category slug và subcategory slug
+    @GetMapping("/category/{categorySlug}")
+    public ResponseEntity<?> getArticlesByCategory(@PathVariable String categorySlug) {
+        List<Article> articles = articleService.getArticlesByCategorySlug(categorySlug, null);
+        if (articles.isEmpty()) {
+            return ResponseEntity.ok("Không có bài viết nào trong danh mục này.");
+        }
+        return ResponseEntity.ok(articles);
+    }
+
+    // API động để lấy bài viết theo category slug và subcategory slug
+    @GetMapping("/category/{categorySlug}/{subcategorySlug}")
+    public ResponseEntity<?> getArticlesByCategoryAndSubcategory(
+            @PathVariable String categorySlug,
+            @PathVariable String subcategorySlug) {
+        List<Article> articles = articleService.getArticlesByCategorySlug(categorySlug, subcategorySlug);
+        if (articles.isEmpty()) {
+            return ResponseEntity.ok("Không có bài viết nào trong danh mục này.");
+        }
+        return ResponseEntity.ok(articles);
+    }
 }
