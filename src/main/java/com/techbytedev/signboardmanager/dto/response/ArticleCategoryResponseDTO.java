@@ -22,6 +22,7 @@ public class ArticleCategoryResponseDTO {
     private int sortOrder;
     private int articleCount;
     private int childrenCount;
+    private int totalChildrenArticlesCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<ArticleCategoryResponseDTO> children;
