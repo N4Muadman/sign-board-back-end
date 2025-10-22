@@ -165,6 +165,8 @@ public class DataInsertionUtility implements CommandLineRunner {
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('ARTICLE_CATEGORY_CREATE', '/api/admin/article-categories', 'POST', 'ARTICLE_CATEGORY', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
+                    "('ARTICLE_CATEGORY_READ_ARTICLES', '/api/admin/article-categories/getAllArticles/{id}', 'GET', 'ARTICLE_CATEGORY', NOW(), NOW())");
+                executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('ARTICLE_CATEGORY_READ', '/api/admin/article-categories/{id}', 'GET', 'ARTICLE_CATEGORY', NOW(), NOW())");
                 executeInsert(statement, "INSERT INTO permissions (name, api_path, method, module, created_at, updated_at) VALUES " +
                     "('ARTICLE_CATEGORY_UPDATE', '/api/admin/article-categories/{id}', 'PUT', 'ARTICLE_CATEGORY', NOW(), NOW())");

@@ -1,12 +1,18 @@
 package com.techbytedev.signboardmanager.controller;
 
 import com.techbytedev.signboardmanager.dto.response.ArticleCategoryResponseDTO;
+import com.techbytedev.signboardmanager.dto.response.ArticleResponseDTO;
+import com.techbytedev.signboardmanager.dto.response.CategoryWithArticlesDTO;
 import com.techbytedev.signboardmanager.entity.ArticleCategory;
 import com.techbytedev.signboardmanager.service.ArticleCategoryService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -64,6 +70,8 @@ public class ArticleCategoryController {
         List<ArticleCategoryResponseDTO> tree = articleCategoryService.getArticleCategoryTree();
         return ResponseEntity.ok(tree);
     }
+
+   
 
     @PostMapping("/article-categories")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article-categories', 'POST')")
@@ -140,9 +148,28 @@ public class ArticleCategoryController {
     @GetMapping("/article-categories/search")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article-categories/search', 'GET')")
     public ResponseEntity<List<ArticleCategory>> searchArticleCategories(@RequestParam String name) {
-        logger.debug("Searching article categories with name: {}", name);
-        List<ArticleCategory> categories = articleCategoryService.searchArticleCategories(name);
-        return ResponseEntity.ok(categories);
+        logger.debug("Searching article categories with name containing: {}", name);
+        return ResponseEntity.ok(articleCategoryService.searchArticleCategories(name));
+    }
+
+    @GetMapping("/article-categories/getAllArticles/{id}")
+    @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article-categories/getAllArticles/{id}', 'GET')")
+    public ResponseEntity<?> getAllArticlesByCategoryAndSubcategories(
+            @PathVariable int id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
+        
+        logger.debug("Getting all articles for category and subcategories with id: {}, page: {}, size: {}, search: {}", id, page, size, search);
+        
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+            CategoryWithArticlesDTO result = articleCategoryService.getAllArticlesByCategoryAndSubcategories(id, pageable, search);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Error getting articles for category {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
     }
 
     @GetMapping("/article-categories/{id}")

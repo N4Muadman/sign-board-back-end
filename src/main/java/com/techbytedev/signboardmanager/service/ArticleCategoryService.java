@@ -1,10 +1,9 @@
 package com.techbytedev.signboardmanager.service;
 
-import com.techbytedev.signboardmanager.dto.response.ArticleCategoryResponseDTO;
-import com.techbytedev.signboardmanager.entity.Article;
-import com.techbytedev.signboardmanager.entity.ArticleCategory;
-import com.techbytedev.signboardmanager.repository.ArticleCategoryRepository;
-import com.techbytedev.signboardmanager.repository.ArticleRepository;
+
+import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,7 +12,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.techbytedev.signboardmanager.dto.response.ArticleCategoryResponseDTO;
+import com.techbytedev.signboardmanager.dto.response.ArticleResponseDTO;
+import com.techbytedev.signboardmanager.dto.response.CategoryWithArticlesDTO;
+import com.techbytedev.signboardmanager.entity.Article;
+import com.techbytedev.signboardmanager.entity.ArticleCategory;
+import com.techbytedev.signboardmanager.repository.ArticleCategoryRepository;
+import com.techbytedev.signboardmanager.repository.ArticleRepository;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +30,8 @@ import java.util.Optional;
 
 @Service
 public class ArticleCategoryService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ArticleCategoryService.class);
 
     @Autowired
     private ArticleCategoryRepository articleCategoryRepository;
@@ -200,5 +210,115 @@ public class ArticleCategoryService {
         return articleCategoryRepository.findByIsActiveTrue().stream()
                 .filter(category -> category.getName().toLowerCase().contains(name.toLowerCase()))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CategoryWithArticlesDTO getAllArticlesByCategoryAndSubcategories(int categoryId, Pageable pageable, String search) {
+        // Check if category exists
+        ArticleCategory rootCategory = articleCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found with id: " + categoryId));
+
+        // Get all categories to build hierarchy
+        List<ArticleCategory> allCategories = articleCategoryRepository.findAll();
+        Map<Integer, List<ArticleCategory>> childrenMap = buildChildrenMap(allCategories);
+
+        // Get all category IDs including subcategories
+        List<Integer> categoryIds = new ArrayList<>();
+        categoryIds.add(categoryId);
+        findChildCategories(categoryId, allCategories, categoryIds);
+
+        // Get paginated articles from these categories, with search filter
+        Page<Article> articlePage;
+        if (search != null && !search.trim().isEmpty()) {
+            articlePage = articleRepository.findByCategoryIdInAndSearch((Collection<Integer>) categoryIds, search, pageable);
+        } else {
+            articlePage = articleRepository.findByCategoryIdIn((Collection<Integer>) categoryIds, pageable);
+        }
+
+        // Group articles by categoryId
+        Map<Integer, List<Article>> articlesByCategory = new HashMap<>();
+        for (Article article : articlePage.getContent()) {
+            articlesByCategory.computeIfAbsent(article.getCategory().getId(), k -> new ArrayList<>()).add(article);
+        }
+
+        // Build nested DTO starting from root category
+        CategoryWithArticlesDTO result = buildCategoryWithArticlesDTO(rootCategory, childrenMap, articlesByCategory, allCategories);
+        logger.info("Built CategoryWithArticlesDTO: {}", result);
+        return result;
+    }
+
+    private Map<Integer, List<ArticleCategory>> buildChildrenMap(List<ArticleCategory> categories) {
+        Map<Integer, List<ArticleCategory>> childrenMap = new HashMap<>();
+        for (ArticleCategory category : categories) {
+            Integer parentId = category.getParentCategory() != null ? category.getParentCategory().getId() : null;
+            childrenMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(category);
+        }
+        return childrenMap;
+    }
+
+    private CategoryWithArticlesDTO buildCategoryWithArticlesDTO(ArticleCategory category, Map<Integer, List<ArticleCategory>> childrenMap, Map<Integer, List<Article>> articlesByCategory, List<ArticleCategory> allCategories) {
+        CategoryWithArticlesDTO dto = CategoryWithArticlesDTO.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .slug(category.getSlug())
+                .description(category.getDescription())
+                .isActive(category.isActive())
+                .level(category.getLevel())
+                .sortOrder(category.getSortOrder())
+                .createdAt(category.getCreatedAt())
+                .updatedAt(category.getUpdatedAt())
+                .build();
+
+        // Set parent info
+        if (category.getParentCategory() != null) {
+            dto.setParentId(category.getParentCategory().getId());
+            dto.setParentName(category.getParentCategory().getName());
+        }
+
+        // Set articles for this category
+        List<Article> articles = articlesByCategory.getOrDefault(category.getId(), new ArrayList<>());
+        List<ArticleResponseDTO> articleDTOs = articles.stream()
+                .map(article -> ArticleResponseDTO.builder()
+                        .id(article.getId())
+                        .title(article.getTitle())
+                        .content(article.getContent())
+                        .excerpt(article.getExcerpt())
+                        .slug(article.getSlug())
+                        .imageBase64(article.getImageBase64())
+                        .categoryId(article.getCategory().getId())
+                        .isActive(article.isFeatured())  // Using isFeatured as isActive, assuming it's similar
+                        .createdAt(article.getCreatedAt() != null ? java.sql.Timestamp.valueOf(article.getCreatedAt()) : null)
+                        .updatedAt(article.getUpdatedAt() != null ? java.sql.Timestamp.valueOf(article.getUpdatedAt()) : null)
+                        .build())
+                .toList();
+        dto.setArticles(articleDTOs);
+        dto.setArticleCount(articleDTOs.size());
+
+        // Set children
+        List<ArticleCategory> children = childrenMap.getOrDefault(category.getId(), new ArrayList<>());
+        children.sort(Comparator.comparing(ArticleCategory::getSortOrder));
+        List<CategoryWithArticlesDTO> childrenDTOs = children.stream()
+                .map(child -> buildCategoryWithArticlesDTO(child, childrenMap, articlesByCategory, allCategories))
+                .toList();
+        dto.setSubcategories(childrenDTOs);
+        dto.setChildrenCount(childrenDTOs.size());
+
+        // Calculate total children articles
+        int totalArticles = articleDTOs.size();
+        for (CategoryWithArticlesDTO child : childrenDTOs) {
+            totalArticles += child.getTotalChildrenArticlesCount();
+        }
+        dto.setTotalChildrenArticlesCount(totalArticles);
+
+        return dto;
+    }
+
+    private void findChildCategories(int parentId, List<ArticleCategory> allCategories, List<Integer> result) {
+        for (ArticleCategory category : allCategories) {
+            if (category.getParentCategory() != null && category.getParentCategory().getId() == parentId) {
+                result.add(category.getId());
+                findChildCategories(category.getId(), allCategories, result);
+            }
+        }
     }
 }
