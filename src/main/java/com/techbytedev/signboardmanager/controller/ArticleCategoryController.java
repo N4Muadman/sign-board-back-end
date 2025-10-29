@@ -175,10 +175,7 @@ public class ArticleCategoryController {
         }
     }
 
-    @GetMapping("/article-categories/{id}/images64")
-    public String getImages64(@PathVariable int id) {
-        return articleCategoryService.getImages64ByCategoryId(id);
-    }
+ 
     
 
     @GetMapping("/article-categories/{id}")
