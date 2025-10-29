@@ -30,4 +30,10 @@ public interface ArticleRepository extends JpaRepository<Article, Integer> {
     Article findBySlug(String slug);
     @Query("SELECT a FROM Article a WHERE a.category.id IN :categoryIds AND (a.title LIKE %:search% OR a.content LIKE %:search%) ORDER BY a.createdAt DESC")
     Page<Article> findByCategoryIdInAndSearch(@Param("categoryIds") Collection<Integer> categoryIds, @Param("search") String search, Pageable pageable);
+    
+    @Query("SELECT a FROM Article a LEFT JOIN FETCH a.category c WHERE a.category.id IN :categoryIds ORDER BY a.createdAt DESC")
+    Page<Article> findByCategoryIdInWithCategory(
+        @Param("categoryIds") List<Integer> categoryIds, 
+        Pageable pageable
+    );
 }

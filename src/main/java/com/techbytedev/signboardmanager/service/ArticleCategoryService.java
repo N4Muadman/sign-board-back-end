@@ -21,12 +21,13 @@ import com.techbytedev.signboardmanager.repository.ArticleCategoryRepository;
 import com.techbytedev.signboardmanager.repository.ArticleRepository;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.springframework.util.StringUtils;
 
 @Service
 public class ArticleCategoryService {
@@ -229,97 +230,100 @@ public class ArticleCategoryService {
 
     @Transactional(readOnly = true)
     public CategoryWithArticlesDTO getAllArticlesByCategoryAndSubcategories(int categoryId, Pageable pageable, String search) {
-        // Check if category exists
+        // 1. Lấy danh mục gốc
         ArticleCategory rootCategory = articleCategoryRepository.findById(categoryId)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + categoryId));
 
-        // Get all categories to build hierarchy
-        List<ArticleCategory> allCategories = articleCategoryRepository.findAll();
-        Map<Integer, List<ArticleCategory>> childrenMap = buildChildrenMap(allCategories);
-
-        // Get all category IDs including subcategories
+        // 2. Lấy tất cả ID danh mục con (bao gồm cả danh mục gốc)
         List<Integer> categoryIds = new ArrayList<>();
         categoryIds.add(categoryId);
-        findChildCategories(categoryId, allCategories, categoryIds);
+        findChildCategoryIds(categoryId, categoryIds);
 
-        // Get paginated articles from these categories, with search filter
+        // 3. Lấy tất cả danh mục liên quan trong một lần gọi
+        List<ArticleCategory> allCategories = articleCategoryRepository.findAllById(categoryIds);
+        // 4. Lấy bài viết đã phân trang
         Page<Article> articlePage;
-        if (search != null && !search.trim().isEmpty()) {
-            articlePage = articleRepository.findByCategoryIdInAndSearch((Collection<Integer>) categoryIds, search, pageable);
+        if (StringUtils.hasText(search)) {
+            articlePage = articleRepository.findByCategoryIdInAndSearch(categoryIds, search, pageable);
         } else {
-            articlePage = articleRepository.findByCategoryIdIn((Collection<Integer>) categoryIds, pageable);
+            articlePage = articleRepository.findByCategoryIdInWithCategory(categoryIds, pageable);
         }
 
-        // Group articles by categoryId
-        Map<Integer, List<Article>> articlesByCategory = new HashMap<>();
-        for (Article article : articlePage.getContent()) {
-            articlesByCategory.computeIfAbsent(article.getCategory().getId(), k -> new ArrayList<>()).add(article);
-        }
+        // 5. Nhóm bài viết theo categoryId
+        Map<Integer, List<Article>> articlesByCategory = articlePage.getContent().stream()
+                .collect(Collectors.groupingBy(article -> article.getCategory().getId()));
 
-        // Build nested DTO starting from root category
+        // 6. Xây dựng cây danh mục
+        Map<Integer, List<ArticleCategory>> childrenMap = buildChildrenMap(allCategories);
+
+        // 7. Xây dựng kết quả
         CategoryWithArticlesDTO result = buildCategoryWithArticlesDTO(rootCategory, childrenMap, articlesByCategory, allCategories);
-        logger.info("Built CategoryWithArticlesDTO: {}", result);
+        logger.debug("Built CategoryWithArticlesDTO for category: {}", categoryId);
         return result;
+    }
+    
+    private void findChildCategoryIds(int parentId, List<Integer> result) {
+        List<ArticleCategory> children = articleCategoryRepository.findByParentCategoryIdAndIsActiveTrue(parentId);
+        for (ArticleCategory child : children) {
+            result.add(child.getId());
+            findChildCategoryIds(child.getId(), result);
+        }
     }
 
     private Map<Integer, List<ArticleCategory>> buildChildrenMap(List<ArticleCategory> categories) {
         Map<Integer, List<ArticleCategory>> childrenMap = new HashMap<>();
         for (ArticleCategory category : categories) {
-            Integer parentId = category.getParentCategory() != null ? category.getParentCategory().getId() : null;
-            childrenMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(category);
+            if (category.getParentCategory() != null) {
+                childrenMap.computeIfAbsent(category.getParentCategory().getId(), k -> new ArrayList<>()).add(category);
+            }
+        }
+        // Sắp xếp các danh mục con theo sortOrder
+        for (List<ArticleCategory> children : childrenMap.values()) {
+            children.sort(Comparator.comparingInt(ArticleCategory::getSortOrder));
         }
         return childrenMap;
     }
 
-    private CategoryWithArticlesDTO buildCategoryWithArticlesDTO(ArticleCategory category, Map<Integer, List<ArticleCategory>> childrenMap, Map<Integer, List<Article>> articlesByCategory, List<ArticleCategory> allCategories) {
-        CategoryWithArticlesDTO dto = CategoryWithArticlesDTO.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .slug(category.getSlug())
-                .description(category.getDescription())
-                .isActive(category.isActive())
-                .level(category.getLevel())
-                .sortOrder(category.getSortOrder())
-                .createdAt(category.getCreatedAt())
-                .updatedAt(category.getUpdatedAt())
-                .build();
+    private CategoryWithArticlesDTO buildCategoryWithArticlesDTO(
+            ArticleCategory category, 
+            Map<Integer, List<ArticleCategory>> childrenMap,
+            Map<Integer, List<Article>> articlesByCategory, 
+            List<ArticleCategory> allCategories) {
+            
+        CategoryWithArticlesDTO dto = new CategoryWithArticlesDTO();
+        // Giữ nguyên các trường hiện có
+        dto.setId(category.getId());
+        dto.setName(category.getName());
+        dto.setSlug(category.getSlug());
+        dto.setDescription(category.getDescription());
+        dto.setActive(category.isActive());
+        dto.setLevel(category.getLevel());
+        dto.setSortOrder(category.getSortOrder());
+        dto.setCreatedAt(category.getCreatedAt());
+        dto.setUpdatedAt(category.getUpdatedAt());
 
-        // Set parent info
+        // Thiết lập thông tin parent
         if (category.getParentCategory() != null) {
             dto.setParentId(category.getParentCategory().getId());
             dto.setParentName(category.getParentCategory().getName());
         }
 
-        // Set articles for this category
+        // Thiết lập bài viết cho danh mục hiện tại
         List<Article> articles = articlesByCategory.getOrDefault(category.getId(), new ArrayList<>());
-        List<ArticleResponseDTO> articleDTOs = articles.stream()
-                .map(article -> ArticleResponseDTO.builder()
-                        .id(article.getId())
-                        .title(article.getTitle())
-                        .content(article.getContent())
-                        .excerpt(article.getExcerpt())
-                        .slug(article.getSlug())
-                        .imageBase64(article.getImageBase64())
-                        .categoryId(article.getCategory().getId())
-                        .isActive(article.isFeatured())  // Using isFeatured as isActive, assuming it's similar
-                        .createdAt(article.getCreatedAt() != null ? java.sql.Timestamp.valueOf(article.getCreatedAt()) : null)
-                        .updatedAt(article.getUpdatedAt() != null ? java.sql.Timestamp.valueOf(article.getUpdatedAt()) : null)
-                        .build())
-                .toList();
-        dto.setArticles(articleDTOs);
-        dto.setArticleCount(articleDTOs.size());
+        dto.setArticles(mapToArticleDTOs(articles));
+        dto.setArticleCount(articles.size());
 
-        // Set children
+        // Xử lý danh mục con
         List<ArticleCategory> children = childrenMap.getOrDefault(category.getId(), new ArrayList<>());
-        children.sort(Comparator.comparing(ArticleCategory::getSortOrder));
         List<CategoryWithArticlesDTO> childrenDTOs = children.stream()
                 .map(child -> buildCategoryWithArticlesDTO(child, childrenMap, articlesByCategory, allCategories))
-                .toList();
+                .collect(Collectors.toList());
+
         dto.setSubcategories(childrenDTOs);
         dto.setChildrenCount(childrenDTOs.size());
 
-        // Calculate total children articles
-        int totalArticles = articleDTOs.size();
+        // Tính tổng số bài viết của tất cả danh mục con
+        int totalArticles = articles.size();
         for (CategoryWithArticlesDTO child : childrenDTOs) {
             totalArticles += child.getTotalChildrenArticlesCount();
         }
@@ -327,15 +331,24 @@ public class ArticleCategoryService {
 
         return dto;
     }
-
-    private void findChildCategories(int parentId, List<ArticleCategory> allCategories, List<Integer> result) {
-        for (ArticleCategory category : allCategories) {
-            if (category.getParentCategory() != null && category.getParentCategory().getId() == parentId) {
-                result.add(category.getId());
-                findChildCategories(category.getId(), allCategories, result);
-            }
-        }
+    
+    private List<ArticleResponseDTO> mapToArticleDTOs(List<Article> articles) {
+        return articles.stream()
+            .map(article -> ArticleResponseDTO.builder()
+                .id(article.getId())
+                .title(article.getTitle())
+                .content(article.getContent())
+                .excerpt(article.getExcerpt())
+                .slug(article.getSlug())
+                .imageBase64(article.getImageBase64())
+                .categoryId(article.getCategory().getId())
+                .isActive(article.isFeatured())
+                .createdAt(article.getCreatedAt() != null ? java.sql.Timestamp.valueOf(article.getCreatedAt()) : null)
+                .updatedAt(article.getUpdatedAt() != null ? java.sql.Timestamp.valueOf(article.getUpdatedAt()) : null)
+                .build())
+            .collect(Collectors.toList());
     }
+
 
     
 }
