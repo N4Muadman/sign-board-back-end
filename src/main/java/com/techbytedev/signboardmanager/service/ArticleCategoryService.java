@@ -51,6 +51,7 @@ public class ArticleCategoryService {
             }
 
             category.setParentCategory(parent);
+            logger.info("Parent category set: {}", parent.getName());
         }
         return articleCategoryRepository.save(category);
     }
@@ -61,6 +62,7 @@ public class ArticleCategoryService {
 
         category.setName(categoryDetails.getName());
         category.setSlug(categoryDetails.getSlug());
+        category.setImage64(categoryDetails.getImage64());
         category.setDescription(categoryDetails.getDescription());
         category.setActive(categoryDetails.isActive());
 
@@ -93,6 +95,19 @@ public class ArticleCategoryService {
         }
 
         articleCategoryRepository.delete(category);
+    }
+
+    public String getFirstArticleImage64(int id) {
+        Article article = articleRepository.getFirstArticleByCategoryId(id);
+        if (article == null) {
+            return null;
+        }
+        return article.getImageBase64();
+    }
+
+
+    public Article getFirstArticle(int id) {
+        return articleRepository.getFirstArticleByCategoryId(id);
     }
 
     @Transactional(readOnly = true)
@@ -321,4 +336,6 @@ public class ArticleCategoryService {
             }
         }
     }
+
+    
 }

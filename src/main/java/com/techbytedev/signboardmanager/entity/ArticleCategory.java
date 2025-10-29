@@ -26,6 +26,9 @@ public class ArticleCategory {
     @Column(name = "slug", unique = true)
     private String slug;
 
+   @Column(name = "image64", columnDefinition = "LONGTEXT")  // QUAN TRỌNG
+private String image64;
+
     @Column(name = "description")
     private String description;
 

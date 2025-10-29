@@ -24,6 +24,8 @@ public interface ArticleRepository extends JpaRepository<Article, Integer> {
     List<Article> findByCategoryId(int categoryId);
     @Query("SELECT a FROM Article a WHERE a.category.id IN :categoryIds ORDER BY a.createdAt DESC")
     Page<Article> findByCategoryIdIn(@Param("categoryIds") Collection<Integer> categoryIds, Pageable pageable);
+    
+    Article getFirstArticleByCategoryId(int categoryId);
 
     Article findBySlug(String slug);
     @Query("SELECT a FROM Article a WHERE a.category.id IN :categoryIds AND (a.title LIKE %:search% OR a.content LIKE %:search%) ORDER BY a.createdAt DESC")

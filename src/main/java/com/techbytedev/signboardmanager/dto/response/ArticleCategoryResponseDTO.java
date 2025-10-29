@@ -14,6 +14,7 @@ public class ArticleCategoryResponseDTO {
     private int id;
     private String name;
     private String slug;
+    private String image64;
     private String description;
     private boolean isActive;
     private Integer parentId;

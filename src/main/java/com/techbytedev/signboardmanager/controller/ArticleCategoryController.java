@@ -21,6 +21,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/admin")
@@ -171,6 +174,12 @@ public class ArticleCategoryController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
+
+    @GetMapping("/article-categories/{id}/images64")
+    public String getImages64(@PathVariable int id) {
+        return articleCategoryService.getImages64ByCategoryId(id);
+    }
+    
 
     @GetMapping("/article-categories/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article-categories/{id}', 'GET')")
