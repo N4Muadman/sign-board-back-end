@@ -121,10 +121,67 @@ public class ArticleCategoryController {
 
     @PutMapping("/article-categories/{id}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, '/api/admin/article-categories/{id}', 'PUT')")
-    public ResponseEntity<ArticleCategory> updateArticleCategory(@PathVariable int id, @RequestBody ArticleCategory category) {
+    public ResponseEntity<ArticleCategory> updateArticleCategory(
+            @PathVariable int id, 
+            @RequestBody Map<String, Object> updates) {
+        
         logger.debug("Updating article category with id: {}", id);
+        
         try {
-            ArticleCategory updated = articleCategoryService.updateArticleCategory(id, category);
+            // Lấy category hiện tại từ database
+            ArticleCategory existingCategory = articleCategoryService.getArticleCategoryById(id);
+            if (existingCategory == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            
+            // Cập nhật các trường cơ bản
+            if (updates.containsKey("name")) {
+                existingCategory.setName((String) updates.get("name"));
+            }
+            if (updates.containsKey("description")) {
+                existingCategory.setDescription((String) updates.get("description"));
+            }
+            if (updates.containsKey("image64")) {
+                existingCategory.setImage64((String) updates.get("image64"));
+            }
+            if (updates.containsKey("isActive")) {
+                existingCategory.setActive((Boolean) updates.get("isActive"));
+            }
+            
+            // Xử lý cập nhật parent category
+            if (updates.containsKey("parentId")) {
+                Object parentIdObj = updates.get("parentId");
+                Integer parentId = null;
+                
+                if (parentIdObj != null) {
+                    try {
+                        if (parentIdObj instanceof Number) {
+                            parentId = ((Number) parentIdObj).intValue();
+                        } else if (parentIdObj instanceof String) {
+                            parentId = Integer.parseInt((String) parentIdObj);
+                        } else {
+                            logger.warn("Unexpected parentId type: {}", parentIdObj.getClass().getName());
+                        }
+                    } catch (NumberFormatException e) {
+                        logger.error("Invalid parentId format: {}", parentIdObj);
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
+                }
+                
+                if (parentId != null && parentId > 0) {
+                    ArticleCategory parent = articleCategoryService.getArticleCategoryById(parentId);
+                    if (parent == null) {
+                        logger.warn("Parent category not found with id: {}", parentId);
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(null);
+                    }
+                    existingCategory.setParentCategory(parent);
+                } else {
+                    existingCategory.setParentCategory(null);
+                }
+            }
+            
+            ArticleCategory updated = articleCategoryService.saveArticleCategory(existingCategory);
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             logger.error("Error updating article category: {}", e.getMessage());

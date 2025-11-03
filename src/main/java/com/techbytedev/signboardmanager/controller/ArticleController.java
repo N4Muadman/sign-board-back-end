@@ -24,6 +24,16 @@ public class ArticleController {
         this.articleService = articleService;
     }
 
+    // hiển thị các tin tức nổi bật (tối đa 5 bài)
+    @GetMapping("/featured-news")
+    public ResponseEntity<?> getFeaturedNews() {
+        List<Article> articles = articleService.getFeaturedProjects();
+        if (articles.isEmpty()) {
+            return ResponseEntity.ok("Không có tin tức nổi bật nào.");
+        }
+        return ResponseEntity.ok(articles);
+    }
+
     // hiển thị các dự án tiêu biểu
     @GetMapping("/featured-projects")
     public ResponseEntity<?> getFeaturedProjects() {

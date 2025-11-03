@@ -220,6 +220,11 @@ public class ArticleCategoryService {
         Optional<ArticleCategory> category = articleCategoryRepository.findById(id);
         return category.orElse(null);
     }
+    
+    @Transactional
+    public ArticleCategory saveArticleCategory(ArticleCategory category) {
+        return articleCategoryRepository.save(category);
+    }
 
     @Transactional(readOnly = true)
     public List<ArticleCategory> searchArticleCategories(String name) {
@@ -240,25 +245,105 @@ public class ArticleCategoryService {
         findChildCategoryIds(categoryId, categoryIds);
 
         // 3. Lấy tất cả danh mục liên quan trong một lần gọi
-        List<ArticleCategory> allCategories = articleCategoryRepository.findAllById(categoryIds);
-        // 4. Lấy bài viết đã phân trang
-        Page<Article> articlePage;
-        if (StringUtils.hasText(search)) {
-            articlePage = articleRepository.findByCategoryIdInAndSearch(categoryIds, search, pageable);
-        } else {
-            articlePage = articleRepository.findByCategoryIdInWithCategory(categoryIds, pageable);
+        
+        // Nếu có danh mục con, thêm vào danh sách
+        if (rootCategory.getChildren() != null && !rootCategory.getChildren().isEmpty()) {
+            categoryIds.addAll(rootCategory.getChildren().stream()
+                    .map(ArticleCategory::getId)
+                    .collect(Collectors.toList()));
         }
-
-        // 5. Nhóm bài viết theo categoryId
-        Map<Integer, List<Article>> articlesByCategory = articlePage.getContent().stream()
-                .collect(Collectors.groupingBy(article -> article.getCategory().getId()));
-
-        // 6. Xây dựng cây danh mục
-        Map<Integer, List<ArticleCategory>> childrenMap = buildChildrenMap(allCategories);
-
-        // 7. Xây dựng kết quả
-        CategoryWithArticlesDTO result = buildCategoryWithArticlesDTO(rootCategory, childrenMap, articlesByCategory, allCategories);
-        logger.debug("Built CategoryWithArticlesDTO for category: {}", categoryId);
+        
+        // 3. Lấy tất cả các danh mục con (đệ quy) nếu cần
+        List<ArticleCategory> allCategories = new ArrayList<>();
+        allCategories.add(rootCategory);
+        if (rootCategory.getChildren() != null) {
+            allCategories.addAll(rootCategory.getChildren());
+        }
+        
+        // 4. Lấy danh sách bài viết đã phân trang
+        Page<Article> articlePage;
+        if (search != null && !search.trim().isEmpty()) {
+            // Tìm kiếm bài viết theo từ khóa
+            articlePage = articleRepository.findByCategoryIdInAndSearch(
+                    categoryIds, "%" + search + "%", pageable);
+        } else {
+            // Lấy tất cả bài viết
+            articlePage = articleRepository.findByCategoryIdIn(categoryIds, pageable);
+        }
+        
+        // 5. Convert to DTO
+        List<ArticleResponseDTO> articleDTOs = articlePage.getContent().stream()
+                .map(article -> {
+                    ArticleResponseDTO dto = new ArticleResponseDTO();
+                    dto.setId(article.getId());
+                    dto.setTitle(article.getTitle());
+                    dto.setSlug(article.getSlug());
+                    dto.setContent(article.getContent());
+                    dto.setImageBase64(article.getImageBase64());
+                    // Convert LocalDateTime to Date
+                    if (article.getCreatedAt() != null) {
+                        dto.setCreatedAt(java.sql.Timestamp.valueOf(article.getCreatedAt()));
+                    }
+                    if (article.getUpdatedAt() != null) {
+                        dto.setUpdatedAt(java.sql.Timestamp.valueOf(article.getUpdatedAt()));
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+        // Get the article count for this category
+        int articleCount = articleRepository.countByCategoryId(rootCategory.getId());
+        
+        // Get the total article count for all child categories
+        int totalChildrenArticlesCount = 0;
+        if (rootCategory.getChildren() != null && !rootCategory.getChildren().isEmpty()) {
+            for (ArticleCategory child : rootCategory.getChildren()) {
+                totalChildrenArticlesCount += articleRepository.countByCategoryId(child.getId());
+            }
+        }
+        
+        CategoryWithArticlesDTO result = CategoryWithArticlesDTO.builder()
+                .id(rootCategory.getId())
+                .name(rootCategory.getName())
+                .slug(rootCategory.getSlug())
+                .description(rootCategory.getDescription())
+                .isActive(rootCategory.isActive())
+                .level(rootCategory.getLevel())
+                .sortOrder(rootCategory.getSortOrder())
+                .articleCount(articleCount)
+                .totalChildrenArticlesCount(totalChildrenArticlesCount)
+                .createdAt(rootCategory.getCreatedAt())
+                .updatedAt(rootCategory.getUpdatedAt())
+                .articles(articleDTOs)
+                .currentPage(articlePage.getNumber())
+                .totalPages(articlePage.getTotalPages())
+                .totalElements(articlePage.getTotalElements())
+                .size(articlePage.getSize())
+                .build();
+        
+        // 7. Thêm thông tin danh mục cha nếu có
+        if (rootCategory.getParentCategory() != null) {
+            result.setParentId(rootCategory.getParentCategory().getId());
+            result.setParentName(rootCategory.getParentCategory().getName());
+        }
+        
+        // 8. Thêm danh sách danh mục con nếu có
+        if (rootCategory.getChildren() != null && !rootCategory.getChildren().isEmpty()) {
+            result.setSubcategories(rootCategory.getChildren().stream()
+                    .map(subCategory -> {
+                        int subCategoryArticleCount = articleRepository.countByCategoryId(subCategory.getId());
+                        return CategoryWithArticlesDTO.builder()
+                            .id(subCategory.getId())
+                            .name(subCategory.getName())
+                            .slug(subCategory.getSlug())
+                            .articleCount(subCategoryArticleCount)
+                            .build();
+                    })
+                    .collect(Collectors.toList()));
+        }
+        
+        logger.debug("Built CategoryWithArticlesDTO for category: {}, total items: {}", 
+                categoryId, articlePage.getTotalElements());
+                
         return result;
     }
     

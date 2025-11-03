@@ -29,6 +29,8 @@ public class ArticleCategory {
    @Column(name = "image64", columnDefinition = "LONGTEXT")  // QUAN TRỌNG
 private String image64;
 
+
+
     @Column(name = "description")
     private String description;
 
@@ -44,6 +46,7 @@ private String image64;
     @JsonManagedReference
     private List<ArticleCategory> children;
 
+    
     @Column(name = "level")
     private int level;
 

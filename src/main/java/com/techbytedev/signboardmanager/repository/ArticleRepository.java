@@ -16,6 +16,12 @@ import java.util.List;
 @Repository
 public interface ArticleRepository extends JpaRepository<Article, Integer> {
     List<Article> findByTitleContainingOrContentContaining(String title, String content);
+    @Query("SELECT a FROM Article a WHERE a.type = :type AND a.isFeatured = true ORDER BY a.createdAt DESC")
+    List<Article> findTopNByTypeAndIsFeaturedTrueOrderByCreatedAtDesc(
+        @Param("type") PostType type, 
+        Pageable pageable
+    );
+    
     List<Article> findByTypeAndIsFeaturedTrueOrderByCreatedAtDesc(PostType type);
     List<Article> findByType(PostType type);
     List<Article> findByTypeOrderByCreatedAtDesc(PostType type);
@@ -36,4 +42,7 @@ public interface ArticleRepository extends JpaRepository<Article, Integer> {
         @Param("categoryIds") List<Integer> categoryIds, 
         Pageable pageable
     );
+    
+    @Query("SELECT COUNT(a) FROM Article a WHERE a.category.id = :categoryId")
+    int countByCategoryId(@Param("categoryId") int categoryId);
 }

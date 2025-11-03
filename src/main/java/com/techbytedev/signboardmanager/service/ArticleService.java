@@ -8,6 +8,7 @@ import com.techbytedev.signboardmanager.repository.ArticleRepository;
 import com.techbytedev.signboardmanager.repository.ArticleCategoryRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -185,7 +186,12 @@ public class ArticleService {
     }
 
     public List<Article> getFeaturedProjects() {
-        List<Article> articles = articleRepository.findByTypeAndIsFeaturedTrueOrderByCreatedAtDesc(PostType.project);
+        Pageable topFive = PageRequest.of(0, 5);
+        List<Article> articles = articleRepository.findTopNByTypeAndIsFeaturedTrueOrderByCreatedAtDesc(
+            PostType.news, // Using 'news' type for featured news
+            topFive
+        );
+        
         for (Article article : articles) {
             if (article.getFeaturedImageUrl() != null) {
                 article.setFeaturedImageUrl(article.getFeaturedImageUrl());
