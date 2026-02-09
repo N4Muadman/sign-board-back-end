@@ -18,5 +18,10 @@
     "name": "canva.api.redirect-uri",
     "type": "java.lang.String",
     "description": "A description for 'canva.api.redirect-uri'"
+  },
+  {
+    "name": "upload.dir",
+    "type": "java.lang.String",
+    "description": "A description for 'upload.dir'"
   }
 ]}

@@ -4,7 +4,9 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class ProductResponse {
@@ -17,6 +19,8 @@ public class ProductResponse {
     private String dimensions;
     private String imageURL;
     private List<String> imageURLs = new ArrayList<>();
+    private Map<String, String> imageBase64Map = new HashMap<>(); // Map of imageUrl to imageBase64
+
     private List<MaterialResponse> materials = new ArrayList<>();
 
     public int getId() {

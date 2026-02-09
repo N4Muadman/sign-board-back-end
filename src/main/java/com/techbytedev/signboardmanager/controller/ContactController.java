@@ -11,18 +11,20 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/contact")
+@RequestMapping("/api/contacts")
 public class ContactController {
-    @Autowired
-    private ContactService contactService;
+    private final ContactService contactService;
 
-    //ADMIN
-    // danh sách liên hệ
-    @GetMapping("/list")
-    public ResponseEntity<List<Contact>> getList(){
-        return ResponseEntity.ok(contactService.getAllContacts());
+    public ContactController(ContactService contactService) {
+        this.contactService = contactService;
     }
     //CUSTOMER
+    // them liên hệ
+    @PostMapping("/create")
+    public ResponseEntity<Contact> createContact(@RequestBody Contact contact) {
+        Contact saveContact = contactService.saveContact(contact);
+        return new ResponseEntity<>(saveContact, HttpStatus.CREATED);
+    }
     // hiển thị đánh giá theo id của sản phẩm
     @GetMapping("/{productId}")
     public List<ContactResponse> getReviewsByProductId(@PathVariable int productId){

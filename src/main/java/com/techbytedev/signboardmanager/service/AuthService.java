@@ -1,11 +1,14 @@
 package com.techbytedev.signboardmanager.service;
 
 import com.techbytedev.signboardmanager.dto.request.AuthRequest;
+import com.techbytedev.signboardmanager.dto.request.RefreshTokenRequest;
 import com.techbytedev.signboardmanager.dto.request.RegisterRequest;
 import com.techbytedev.signboardmanager.dto.request.ResetPasswordRequest;
 import com.techbytedev.signboardmanager.dto.response.AuthResponse;
+import com.techbytedev.signboardmanager.dto.response.TokenRefreshResponse;
 import com.techbytedev.signboardmanager.dto.response.UserResponse;
 import com.techbytedev.signboardmanager.entity.PasswordResetToken;
+import com.techbytedev.signboardmanager.entity.RefreshToken;
 import com.techbytedev.signboardmanager.entity.Role;
 import com.techbytedev.signboardmanager.entity.User;
 import com.techbytedev.signboardmanager.repository.PasswordResetTokenRepository;
@@ -13,12 +16,15 @@ import com.techbytedev.signboardmanager.repository.RoleRepository;
 import com.techbytedev.signboardmanager.repository.UserRepository;
 import com.techbytedev.signboardmanager.util.JwtUtil;
 import jakarta.mail.MessagingException;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -34,11 +40,12 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
     private final UserService userService;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthService(UserRepository userRepository, RoleRepository roleRepository,
-                       PasswordResetTokenRepository tokenRepository, PasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil, AuthenticationManager authenticationManager,
-                       EmailService emailService, UserService userService) {
+            PasswordResetTokenRepository tokenRepository, PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil, AuthenticationManager authenticationManager,
+            EmailService emailService, UserService userService, RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.tokenRepository = tokenRepository;
@@ -47,6 +54,7 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
         this.emailService = emailService;
         this.userService = userService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -56,65 +64,74 @@ public class AuthService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
         }
+        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new IllegalArgumentException("Phone number already exists");
+        }
 
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setAddress(request.getAddress());
 
-        Role role = roleRepository.findByName("customer")
+        Role role = roleRepository.findByName("USER")
                 .orElseThrow(() -> new IllegalArgumentException("Customer role not found"));
 
         user.setRole(role);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-        user.setActive(true); // Kích hoạt ngay lập tức
+        user.setActive(true);
         userRepository.save(user);
 
         String jwt = jwtUtil.generateToken(user);
-        AuthResponse response = new AuthResponse(jwt);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+        AuthResponse response = new AuthResponse(jwt, refreshToken.getToken());
         response.setUser(userService.convertToResponse(user));
         return response;
     }
 
+    @Transactional
     public AuthResponse login(AuthRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + request.getUsername()));
-
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("Authentication failed for user: " + request.getUsername());
-        }
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-        User authenticatedUser = (User) authentication.getPrincipal();
-        if (authenticatedUser == null) {
-            throw new IllegalStateException("Authenticated user is null after successful authentication");
-        }
+        String jwt = jwtUtil.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+        AuthResponse response = new AuthResponse(jwt, refreshToken.getToken());
+        response.setUser(userService.convertToResponse(user));
 
-        String jwt = jwtUtil.generateToken(authenticatedUser);
-        AuthResponse response = new AuthResponse(jwt);
-        response.setUser(userService.convertToResponse(authenticatedUser));
         return response;
+    }
+
+    public TokenRefreshResponse refreshToken(RefreshTokenRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtUtil.generateToken(user);
+                    return new TokenRefreshResponse(token, requestRefreshToken);
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
 
     public void forgotPassword(String email) throws MessagingException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Email not found"));
 
-        // Tạo mã xác thực 6 chữ số
         String verificationCode = generateVerificationCode();
-
-        // Lưu mã xác thực
         tokenRepository.deleteByUserId(user.getId());
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
         PasswordResetToken resetToken = new PasswordResetToken(verificationCode, user, expiryDate);
         tokenRepository.save(resetToken);
 
-        // Gửi email
         emailService.sendVerificationCodeEmail(user.getEmail(), verificationCode);
     }
 
@@ -139,15 +156,28 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found after Google login"));
         String jwt = jwtUtil.generateToken(user);
-        AuthResponse response = new AuthResponse(jwt);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+        AuthResponse response = new AuthResponse(jwt, refreshToken.getToken());
         response.setUser(userResponse);
         return response;
     }
 
-    // Tạo mã xác thực 6 chữ số
     private String generateVerificationCode() {
         Random random = new Random();
-        int code = 100000 + random.nextInt(900000); // Tạo số ngẫu nhiên từ 100000 đến 999999
+        int code = 100000 + random.nextInt(900000);
         return String.valueOf(code);
+    }
+
+    public UserResponse getProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            String username = authentication.getName();
+
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            return userService.convertToResponse(user);
+        }
+        return null;
     }
 }

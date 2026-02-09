@@ -1,0 +1,48 @@
+package com.techbytedev.signboardmanager.repository;
+
+import com.techbytedev.signboardmanager.entity.Article;
+import com.techbytedev.signboardmanager.entity.PostType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+
+import java.util.List;
+
+@Repository
+public interface ArticleRepository extends JpaRepository<Article, Integer> {
+    List<Article> findByTitleContainingOrContentContaining(String title, String content);
+    @Query("SELECT a FROM Article a WHERE a.type = :type AND a.isFeatured = true ORDER BY a.createdAt DESC")
+    List<Article> findTopNByTypeAndIsFeaturedTrueOrderByCreatedAtDesc(
+        @Param("type") PostType type, 
+        Pageable pageable
+    );
+    
+    List<Article> findByTypeAndIsFeaturedTrueOrderByCreatedAtDesc(PostType type);
+    List<Article> findByType(PostType type);
+    List<Article> findByTypeOrderByCreatedAtDesc(PostType type);
+    Page<Article> findAllByTypeOrderByCreatedAtDesc(Pageable pageable, PostType type);
+    List<Article> findByCategoryIdOrderByCreatedAtDesc(int categoryId);
+    List<Article> findByCategoryId(int categoryId);
+    @Query("SELECT a FROM Article a WHERE a.category.id IN :categoryIds ORDER BY a.createdAt DESC")
+    Page<Article> findByCategoryIdIn(@Param("categoryIds") Collection<Integer> categoryIds, Pageable pageable);
+    
+    Article getFirstArticleByCategoryId(int categoryId);
+
+    Article findBySlug(String slug);
+    @Query("SELECT a FROM Article a WHERE a.category.id IN :categoryIds AND (a.title LIKE %:search% OR a.content LIKE %:search%) ORDER BY a.createdAt DESC")
+    Page<Article> findByCategoryIdInAndSearch(@Param("categoryIds") Collection<Integer> categoryIds, @Param("search") String search, Pageable pageable);
+    
+    @Query("SELECT a FROM Article a LEFT JOIN FETCH a.category c WHERE a.category.id IN :categoryIds ORDER BY a.createdAt DESC")
+    Page<Article> findByCategoryIdInWithCategory(
+        @Param("categoryIds") List<Integer> categoryIds, 
+        Pageable pageable
+    );
+    
+    @Query("SELECT COUNT(a) FROM Article a WHERE a.category.id = :categoryId")
+    int countByCategoryId(@Param("categoryId") int categoryId);
+}
